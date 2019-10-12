@@ -38,13 +38,13 @@ class User:
         # Then checks round value for * and +
         # If it sees * it creates dict entry for sub: True
         # If it sees + it creates dict entry for pole: True
-        r = 1
+        # r = 1
         for k, v in self.kwargs.items():
             if 'Round' in k or 'round' in k:
                 if not v:
                     pass
                 else:
-                    rn = f"round {r}"
+                    rn = k.lower()
                     self.results[rn] = {}
                     # Pole and sub are here just to prevent errors pending discovery of better way
                     # self.results[rn]['pole'] = False
@@ -54,7 +54,7 @@ class User:
                     # that I might want all data in all rounds
 
                     if '*' in v:
-                        self.results[rn]['sub'] = True
+                        self.results[rn]['absent'] = True
                         v = v.replace('*', '')
 
                     if '+' in v:
@@ -63,7 +63,7 @@ class User:
 
                     self.results[rn]['position'] = v
                     # print(k, v)
-                    r = r + 1
+                    # r = r + 1
 
         # might add code that removes empty dict values? might add unknown consequences later on
 
@@ -127,15 +127,43 @@ class User:
 
 def import_csv(filename):
     # Import csv and create classes.
+
+    print("Importing New CSV")
     # This resets the list of drivers
     users = []
 
-    with open('RR_Sample.csv') as csvfile:
+    with open(filename) as csvfile:
         readCSV = csv.DictReader(csvfile, delimiter=',')
         for row in readCSV:
             users.append(User(**row))
 
     return users
+
+
+def import_round(filename):
+    # 2 columns, driver name and position, no header
+    print('Importing Round CSV')
+
+    while True:
+        r = input("Input Round Number:\n")
+        if r.isdigit():
+            break
+        else:
+            print("Please Enter Number Only")
+
+    with open(filename) as csvfile:
+        readCSV = csv.reader(csvfile, delimiter=',')
+        for row in readCSV:
+            print(row)
+            # searches for driver name, if it finds one, adds a kwarg
+            if dr_driver(row[0]) is not None:
+                # dr_driver(row[0]).results[f"round {r}"] = row[1]
+                d = dr_driver(row[0])
+                # d(f'round {r}'] = row[1]
+                # trying to add new kwarg to object but I don't know how!!
+                print(d)
+
+
 
 
 def dr_num(search):
@@ -158,12 +186,12 @@ def list_drivers(lower=False, pr=''):
         if pr == 'p':
             print(d.driver)
     dl = []
-    for d in driver_objects:
-        if lower:
-            dl.append(d.driver.lower())
-        else:
-            dl.append(d.driver)
     if pr != 'p':
+        for d in driver_objects:
+            if lower:
+                dl.append(d.driver.lower())
+            else:
+                dl.append(d.driver)
         return dl
 
 
@@ -340,17 +368,22 @@ def finalize_data(data):
 
 # this defines the users list and image
 driver_objects = import_csv('RR_Sample.csv')
+# single_round = import_round('single_round.csv')
+
 
 img = cv2.imread('race_result_ss.png')
 # match_users(process_race_results(img))
 
 # dr_num('003').get_points()
 
-print(dr_num('003').driver)
-for r, v in dr_num('003').results.items():
-    print(r)
-    print(v)
 
-print(f"Total Points: {dr_num('003').total_points}")
+
+d = '888'
+print(dr_num(d).driver)
+# for r, v in dr_num(d).results.items():
+#     print(r)
+#     print(v)
+#
+# print(f"Total Points: {dr_num(d).total_points}")
 # print(dr_num(888).results)
 # dr_driver('w1holesale').print_info()
