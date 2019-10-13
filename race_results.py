@@ -22,7 +22,7 @@ class User:
     def __init__(self, Driver, Name, Number, Nation, Affiliation, Manufacturer, **kwargs):
         self.driver = Driver
         self.name = Name
-        self.number = Number
+        self.number = str(Number.replace('#', ''))
         self.nation = Nation
         self.affiliation = Affiliation
         self.manufacturer = Manufacturer
@@ -179,16 +179,17 @@ def build_driver(driverentry=''):
     def num_input():
         while True:
             number = str(input(f"Enter {driver}'s number.\n"))
-            if number.isdigit() and 3 >= len(number) > 0:
-                # check if someone already has this number
-                # for d in driver_objects:
-                #     if number in d.number:
-                #         in_use = True
-                #         print(f"Error: Number already in use by {d.driver}")
-                if not in_use:
-                    break
+            # check if someone already has this number
+            in_use = False
+            for d in driver_objects:
+                if number == d.number:
+                    in_use = True
+                    print(f"Error: Number already in use by {d.driver}")
+            if not in_use:
+                break
             else:
                 print("Invalid Entry")
+
         return number
 
     def nation_input():
@@ -303,14 +304,14 @@ def build_driver(driverentry=''):
 def dr_num(search):
     # searches driver list by number
     for x in driver_objects:
-        if str(search) in x.number:
+        if str(search) == x.number:
             return x
 
 
 def dr_driver(search):
     # searches driver list by name
     for x in driver_objects:
-        if str(search.lower()) in x.driver.lower():
+        if str(search.lower()) == x.driver.lower():
             return x
 
 
@@ -318,7 +319,7 @@ def list_drivers(lower=False, pr=''):
     # putting p as the arg prints a list line by line, otherwise returns list
     for d in driver_objects:
         if pr == 'p':
-            print(d.driver)
+            print(d.driver, d.number)
     dl = []
     if pr != 'p':
         for d in driver_objects:
@@ -504,8 +505,8 @@ def finalize_data(data):
 driver_objects = import_csv('RR_Sample.csv')
 # single_round = import_round('single_round.csv')
 
-build_driver()
-list_drivers(pr='p')
+# build_driver()
+# list_drivers(pr='p')
 
 img = cv2.imread('race_result_ss.png')
 # match_users(process_race_results(img))
@@ -513,8 +514,9 @@ img = cv2.imread('race_result_ss.png')
 # dr_num('003').get_points()
 
 
-# d = '888'
+# d = '5'
 # print(dr_num(d).driver)
+# print(dr_num(d).number)
 # for r, v in dr_num(d).results.items():
 #     print(r)
 #     print(v)
