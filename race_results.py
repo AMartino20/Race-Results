@@ -22,57 +22,31 @@ class User:
         self.manufacturer = Manufacturer
         self.kwargs = kwargs
         # results data format
+        self.raw_results = {}
         self.results = {}
-        self.total_points = ''
+        self.total_points = ''  # This will probably be defined by a function
         # might not need a points variable? Maybe it should be a list if I do need it?
         # self.points = []
         # run functions below here
         self.format_rounds()
         self.format_points()
 
-        # print(self.driver)
-        # print(self.results)
-
     def format_rounds(self):
         # Checks for the word Round, formats data around round entries
-        # Then checks round value for * and +
-        # If it sees * it creates dict entry for sub: True
-        # If it sees + it creates dict entry for pole: True
-        # r = 1
         for k, v in self.kwargs.items():
+            # Creates round entries in self.raw_results from self.kwargs
             if 'Round' in k or 'round' in k:
                 if not v:
                     pass
                 else:
                     rn = k.lower()
-                    self.results[rn] = {}
-                    # Pole and sub are here just to prevent errors pending discovery of better way
-                    # self.results[rn]['pole'] = False
-                    # self.results[rn]['sub'] = False
-                    # remove above this line if better way found
-                    # a better way was found but leaving this in for possibility
-                    # that I might want all data in all rounds
-
-                    if '*' in v:
-                        self.results[rn]['absent'] = True
-                        v = v.replace('*', '')
-
-                    if '+' in v:
-                        self.results[rn]['pole'] = True
-                        v = v.replace('+', '')
-
-                    self.results[rn]['position'] = v
-                    # print(k, v)
-                    # r = r + 1
-
-        # might add code that removes empty dict values? might add unknown consequences later on
-
-        # The code below removes strings and keeps its probably better used somewhere else
-        # self.results = [int(x) for x in self.results if x.isdigit()]
-        # this removes only empty strings, leaves list as all strings
-        # self.results = [i for i in self.results if i]
+                    self.raw_results[k] = v
+        for k, v in self.raw_results.items():
+            self.process_points_string(k, v)
 
     def format_points(self):
+        # adds self.results key for points using class tuples. Might have to rework this
+        # if I add support for multiple series
         t = 0
         for k, v in self.results.items():
             # needs isdigit to prevent error with DNX
@@ -80,13 +54,29 @@ class User:
                 round_pos = v['position']
                 round_pos = int(round_pos) - 1
                 pntval = User.standard_points[round_pos]
-                if 'pole' in v.keys():
-                    if v['pole']:
-                        pntval = pntval + 1
+                if 'pole' in v.keys() and v['pole']:
+                    pntval = pntval + 1
                 t = t + pntval
                 v['points'] = pntval
         self.total_points = t
+        print(self.results)
 
+    def process_points_string(self, k, v):
+        # Checks string v for * and +
+        # If it sees * it creates dict entry for sub: True
+        # If it sees + it creates dict entry for pole: True
+        rn = k.lower()
+        self.results[rn] = {}
+
+        if '*' in v:
+            self.results[rn]['absent'] = True
+            v = v.replace('*', '')
+
+        if '+' in v:
+            self.results[rn]['pole'] = True
+            v = v.replace('+', '')
+
+        self.results[rn]['position'] = v
 
     # def sum_points(self):
     #     p = 0
@@ -162,8 +152,6 @@ def import_round(filename):
                 # d(f'round {r}'] = row[1]
                 # trying to add new kwarg to object but I don't know how!!
                 print(d)
-
-
 
 
 def dr_num(search):
@@ -368,7 +356,7 @@ def finalize_data(data):
 
 # this defines the users list and image
 driver_objects = import_csv('RR_Sample.csv')
-# single_round = import_round('single_round.csv')
+single_round = import_round('single_round.csv')
 
 
 img = cv2.imread('race_result_ss.png')
@@ -378,8 +366,8 @@ img = cv2.imread('race_result_ss.png')
 
 
 
-d = '888'
-print(dr_num(d).driver)
+# d = '888'
+# print(dr_num(d).driver)
 # for r, v in dr_num(d).results.items():
 #     print(r)
 #     print(v)
