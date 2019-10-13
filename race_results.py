@@ -13,6 +13,12 @@ class User:
     d2_points = (50, 46, 44, 42, 40, 39, 38, 37, 36, 35, 34, 33, 32, 31)
     d1_points = (80, 76, 74, 7, 70, 69, 68, 67, 66, 65, 64, 63, 62, 61)
 
+    gt3_manu = ('Chevrolet', 'Dodge', 'Ford', 'Honda', 'Mazda', 'Mitsubishi',
+                'Nissan', 'Subaru', 'Toyota', 'Lexus', 'Hyundai', 'Aston Martin',
+                'Jaguar', 'Mclaren', 'Audi', 'BMW', 'Mercedes-Benz', 'Volkswagen',
+                'Porsche', 'Citroen', 'Peugeot', 'Renault Sport', 'Alfa Romeo',
+                'Ferrari', 'Lamborghini"')
+
     def __init__(self, Driver, Name, Number, Nation, Affiliation, Manufacturer, **kwargs):
         self.driver = Driver
         self.name = Name
@@ -79,10 +85,10 @@ class User:
 
     def sum_points(self):
         pass
-    #     p = 0
-    #     for k, v in self.results.items():
-    #         p = p + int(v['points'])
-    #     return p
+        #     p = 0
+        #     for k, v in self.results.items():
+        #         p = p + int(v['points'])
+        #     return p
 
     def manuregion(self):
         # Regions must be in lowercase
@@ -156,6 +162,142 @@ def import_round(filename):
                 print(d.raw_results)
                 print(d.results)
 
+
+def build_driver(driverentry=''):
+    # build a driver object from user input
+
+    def name_input():
+        while True:
+            name = input(f"Enter {driver}'s real name. Enter 'skip' to leave blank.\n")
+            if name == 'skip':
+                name = None
+                break
+            else:
+                break
+        return name
+
+    def num_input():
+        while True:
+            number = str(input(f"Enter {driver}'s number.\n"))
+            if number.isdigit() and 3 >= len(number) > 0:
+                # check if someone already has this number
+                # for d in driver_objects:
+                #     if number in d.number:
+                #         in_use = True
+                #         print(f"Error: Number already in use by {d.driver}")
+                if not in_use:
+                    break
+            else:
+                print("Invalid Entry")
+        return number
+
+    def nation_input():
+        while True:
+            nation = input("Enter 3 digit country code\n")
+            if nation.isalpha() and len(nation) == 3:
+                break
+            else:
+                print("Invalid Entry")
+        return nation.upper()
+
+    def affiliaton_input():
+        affiliation = input(f"Enter {driver}'s team or affiliation.\n"
+                            "Note: Capitalization **DOES** matter.\n")
+
+        return affiliation
+
+    def manu_input():
+        while True:
+            manufacturer = input(f"Enter {driver}'s manufacturer.\n")
+            manu_list = [item.lower() for item in User.gt3_manu]
+            # checks for entry in lowercase list then replaces with correct capitalization
+            if manufacturer.lower() in manu_list:
+                for manu in User.gt3_manu:
+                    if manu.lower() == manufacturer:
+                        manufacturer = manu
+                break
+            else:
+                print("Invalid Entry")
+        return manufacturer
+
+    def verify_driver():
+        pass
+
+    print("Adding new driver to database")
+    # Driver, Name, Number, Nation, Affiliation, Manufacturer
+
+    # Driver PSN
+    while True:
+        if driverentry:
+            driver = driverentry
+            driverentry = None
+            continue
+        else:
+            driver = input("\nPlease enter driver PSN\n"
+                           "Note: Capitalization **DOES** matter.\n")
+        # PSN can't have a space in it
+        if ' ' in driver:
+            print("PSN cannot contain spaces\n")
+            continue
+        # PSN can't be less than 3 characters (might want to check actual rules for psn name
+        elif len(driver) <= 3:
+            print("Invalid Entry")
+            continue
+        else:
+            while True:
+                check = input(f"Begin building entry for {driver}? Enter 'n' to restart, 'y' to continue\n")
+                if check == 'n':
+                    break
+                elif check == 'y':
+                    break
+                else:
+                    print("Invalid Entry")
+                    continue
+        if check == 'y':
+            check = None
+            break
+
+    # Real name input
+    name = name_input()
+    number = num_input()
+    nation = nation_input()
+    affiliation = affiliaton_input()
+    manufacturer = manu_input()
+
+    # Verify Data
+    verify_driver()
+
+    while True:
+        print(f"\nDriver: {driver}\n"
+              f"1. Name: {name}\n"
+              f"2. Number: {number}\n"
+              f"3. Nation: {nation}\n"
+              f"4. Affiliation: {affiliation}\n"
+              f"5. Manufacturer: {manufacturer}\n")
+        modify = input("Is everything correct? Enter 'y' or 'n'.\n")
+        if modify == 'y':
+            break
+        elif modify == 'n':
+            change = input("Enter line number you wish to change.\n")
+            if change == '1':
+                name = name_input()
+            elif change == '2':
+                number = num_input()
+            elif change == '3':
+                nation = nation_input()
+            elif change == '4':
+                affiliation = affiliaton_input()
+            elif change == '5':
+                manufacturer = manu_input()
+            else:
+                print('Invalid Entry')
+        else:
+            print("Invalid Entry")
+
+    add_driver = User(driver, name, number, nation, affiliation, manufacturer)
+
+    driver_objects.append(add_driver)
+    print("User added to database")
 
 
 def dr_num(search):
@@ -360,14 +502,15 @@ def finalize_data(data):
 
 # this defines the users list and image
 driver_objects = import_csv('RR_Sample.csv')
-single_round = import_round('single_round.csv')
+# single_round = import_round('single_round.csv')
 
+build_driver()
+list_drivers(pr='p')
 
 img = cv2.imread('race_result_ss.png')
 # match_users(process_race_results(img))
 
 # dr_num('003').get_points()
-
 
 
 # d = '888'
