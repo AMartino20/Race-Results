@@ -59,7 +59,6 @@ class User:
                 t = t + pntval
                 v['points'] = pntval
         self.total_points = t
-        print(self.results)
 
     def process_points_string(self, k, v):
         # Checks string v for * and +
@@ -78,7 +77,8 @@ class User:
 
         self.results[rn]['position'] = v
 
-    # def sum_points(self):
+    def sum_points(self):
+        pass
     #     p = 0
     #     for k, v in self.results.items():
     #         p = p + int(v['points'])
@@ -137,6 +137,7 @@ def import_round(filename):
     while True:
         r = input("Input Round Number:\n")
         if r.isdigit():
+            r = f"round {r}"
             break
         else:
             print("Please Enter Number Only")
@@ -144,14 +145,17 @@ def import_round(filename):
     with open(filename) as csvfile:
         readCSV = csv.reader(csvfile, delimiter=',')
         for row in readCSV:
-            print(row)
             # searches for driver name, if it finds one, adds a kwarg
             if dr_driver(row[0]) is not None:
                 # dr_driver(row[0]).results[f"round {r}"] = row[1]
                 d = dr_driver(row[0])
-                # d(f'round {r}'] = row[1]
-                # trying to add new kwarg to object but I don't know how!!
-                print(d)
+                d.raw_results[r] = row[1]
+                d.process_points_string(r, row[1])
+
+                print(d.driver)
+                print(d.raw_results)
+                print(d.results)
+
 
 
 def dr_num(search):
