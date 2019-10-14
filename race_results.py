@@ -114,8 +114,10 @@ class User:
         print(f"Username: {self.driver}")
         if self.name != '':
             print(f"Name: {self.name}")
+        print(f"Number: #{self.number}")
         print(f"Nation: {self.nation}")
-        print(f"Affiliation: {self.affiliation}")
+        if self.affiliation != '':
+            print(f"Affiliation: {self.affiliation}")
         print(f"Manufacturer: {self.manufacturer}")
         print(f"Manufacturer Region: {self.manuregion()}")
         print('\n')
@@ -150,8 +152,9 @@ def import_round(filename):
 
     with open(filename) as csvfile:
         readCSV = csv.reader(csvfile, delimiter=',')
+        missing_drivers = []
         for row in readCSV:
-            # searches for driver name, if it finds one, adds a kwarg
+            # searches for driver name, if it finds one, appropriate dict entry
             if dr_driver(row[0]) is not None:
                 # dr_driver(row[0]).results[f"round {r}"] = row[1]
                 d = dr_driver(row[0])
@@ -162,8 +165,42 @@ def import_round(filename):
                 print(d.raw_results)
                 print(d.results)
 
+            # adds nested row list to missing drivers in order to run build_driver
+            # or make a substitution
+            elif dr_driver(row[0]) is None:
+                missing_drivers.append(row)
 
-def build_driver(driverentry=''):
+        for md in missing_drivers:
+            while True:
+                i = input(f"\nIs {md[0]} a new driver or a substitute?\n"
+                          "Options:\n"
+                          "Enter 'new' to build driver entry\n"
+                          f"Enter 'sub' if {md[0]} is a substitute\n"
+                          "Enter 'skip' to skip driver. **WARNING: CANNOT UNDO**\n")
+                if i == 'skip':
+                    break
+                elif i == 'new':
+                    build_driver(driverentry=md[0])
+                    d = dr_driver(md[0])
+                    d.raw_results[r] = md[1]
+                    d.process_points_string(r, md[1])
+                    break
+                elif i == 'sub':
+                    while True:
+                        s = input(f"Who did {md[0]} substitute for?\n")
+                        if dr_driver(s) is not None:
+                            d = dr_driver(s)
+                            d.raw_results[r] = md[1]
+                            d.process_points_string(r, md[1])
+                            print(f"{md[0]} drove for {d.driver}")
+                            break
+                        else:
+                            print("Driver Not Found")
+                    break
+
+
+
+def build_driver(driverentry=False):
     # build a driver object from user input
 
     def name_input():
@@ -202,9 +239,14 @@ def build_driver(driverentry=''):
         return nation.upper()
 
     def affiliaton_input():
-        affiliation = input(f"Enter {driver}'s team or affiliation.\n"
-                            "Note: Capitalization **DOES** matter.\n")
-
+        while True:
+            i = input(f"Enter {driver}'s team or affiliation.\n"
+                      "Note: Capitalization **DOES** matter.\n"
+                      "Enter 'skip' for no team or affiliation.\n")
+            if i == 'skip':
+                i = None
+                break
+        affiliation = i
         return affiliation
 
     def manu_input():
@@ -229,10 +271,9 @@ def build_driver(driverentry=''):
 
     # Driver PSN
     while True:
-        if driverentry:
+        if driverentry is not False:
             driver = driverentry
-            driverentry = None
-            continue
+            driverentry = False
         else:
             driver = input("\nPlease enter driver PSN\n"
                            "Note: Capitalization **DOES** matter.\n")
@@ -258,7 +299,6 @@ def build_driver(driverentry=''):
             check = None
             break
 
-    # Real name input
     name = name_input()
     number = num_input()
     nation = nation_input()
@@ -271,7 +311,7 @@ def build_driver(driverentry=''):
     while True:
         print(f"\nDriver: {driver}\n"
               f"1. Name: {name}\n"
-              f"2. Number: {number}\n"
+              f"2. Number: #{number}\n"
               f"3. Nation: {nation}\n"
               f"4. Affiliation: {affiliation}\n"
               f"5. Manufacturer: {manufacturer}\n")
@@ -503,7 +543,7 @@ def finalize_data(data):
 
 # this defines the users list and image
 driver_objects = import_csv('RR_Sample.csv')
-# single_round = import_round('single_round.csv')
+single_round = import_round('single_round.csv')
 
 # build_driver()
 # list_drivers(pr='p')
