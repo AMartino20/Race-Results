@@ -1,9 +1,11 @@
 import cv2
-import numpy as np
 import pytesseract
 import csv
-from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
+from tkinter import *
+from tkinter import filedialog
+from PIL import ImageTk, Image
+import pickle
 
 
 class User:
@@ -123,6 +125,10 @@ class User:
         print('\n')
 
 
+class Round:
+    pass
+
+
 def import_csv(filename):
     # Import csv and create classes.
 
@@ -197,7 +203,6 @@ def import_round(filename):
                         else:
                             print("Driver Not Found")
                     break
-
 
 
 def build_driver(driverentry=False):
@@ -541,26 +546,208 @@ def finalize_data(data):
     pass
 
 
-# this defines the users list and image
+# GUI FUNCTIONS
+
+
+def donothing():
+    pass
+
+
+def nodata():
+    nodataframe = LabelFrame(root).pack()
+    Label(nodataframe, text="Please open data or import new league.").pack(padx=20, pady=20)
+
+
+def new_league():
+    def finish():
+        global league_info
+        league_info["name"] = nameentry.get()
+        league_info["series"] = seriesentry.get()
+        league_info["shortname"] = nameshortentry.get()
+        # league_info["logo"] = logofile
+        # league_info["csv"] = csvfile
+
+        new_league_frame.grid_forget()
+        new_league_frame.destroy()
+        newleaguewindow.destroy()
+
+        global league_name
+        league_name.set(league_info.get("name"))
+        global series_name
+        series_name.set(league_info.get("series"))
+        # global league_logo
+        # # league_logo = ImageTk.PhotoImage(Image.open(logofile))
+        # league_logo = Image.open(logofile)
+        # league_logo = league_logo.resize((200,200), Image.ANTIALIAS)
+        # league_logo = ImageTk.PhotoImage(league_logo)
+        # logo_label.configure(image=league_logo)
+
+
+        # global driver_objects
+        # driver_objects = import_csv(csv)
+
+    newleaguewindow = Toplevel()
+    new_league_frame = LabelFrame(newleaguewindow, text="Create New League")
+    new_league_frame.pack(padx=10, pady=10)
+
+    nameentry = Entry(new_league_frame)
+    Label(new_league_frame, text="League Name").grid(row=0, column=0, sticky=W, pady=5, padx=5)
+    nameentry.grid(row=0, column=1, padx=5)
+
+    nameshortentry = Entry(new_league_frame)
+    Label(new_league_frame, text="Short Name").grid(row=1, column=0, sticky=W, pady=5, padx=5)
+    nameshortentry.grid(row=1, column=1, padx=5)
+
+    seriesentry = Entry(new_league_frame)
+    Label(new_league_frame, text="Series Name").grid(row=2, column=0, sticky=W, pady=5, padx=5)
+    seriesentry.grid(row=2, column=1, padx=5)
+
+    def choose_csv():
+        global csvfile
+        csvfile = filedialog.askopenfilename(initialdir="", title="Select Driver List CSV")
+
+    Label(new_league_frame, text="Driver List").grid(row=3, column=0, sticky=W, pady=5, padx=5)
+    Button(new_league_frame, text="choose csv", command=choose_csv,
+           ).grid(row=3, column=1, pady=5, padx=5)
+
+    def choose_logo():
+        global logofile
+        logofile = filedialog.askopenfilename(initialdir="", title="Select League Logo")
+
+    # League logo stuff, need to work out resize and respect aspect rations, until then removing button
+    # Label(new_league_frame, text="League Logo").grid(row=4, column=0, sticky=W, pady=5, padx=5)
+    # Button(new_league_frame, text="choose image", command=choose_logo,
+    #        ).grid(row=4, column=1, pady=5, padx=5)
+
+    Button(new_league_frame, text="Start New League", command=finish).grid(row=5, column=0, columnspan=2, padx=15, pady=15)
+
+
+driver_objects = []
 driver_objects = import_csv('RR_Sample.csv')
-single_round = import_round('single_round.csv')
+# Sorts Driver objects by total points
+if driver_objects:
+    driver_objects.sort(key=lambda x: x.total_points, reverse=True)
+league_info = {}
+league_logo = ""
 
-# build_driver()
-# list_drivers(pr='p')
+# creates the base level window
+root = Tk()
+root.title("GTS League Management Tool - Ver Alpha 0.1")
+root.geometry('400x500')
 
-img = cv2.imread('race_result_ss.png')
-# match_users(process_race_results(img))
+league_name = StringVar()
+league_name.set(league_info.get("name"))
+series_name = StringVar()
+series_name.set(league_info.get("series"))
 
-# dr_num('003').get_points()
+
+# Menu Bar
+
+menubar = Menu(root)
+filemenu = Menu(menubar, tearoff=0)
+filemenu.add_command(label="New League", command=new_league)
+filemenu.add_command(label="Open", command=donothing)
+filemenu.add_command(label="Save", command=donothing)
+filemenu.add_separator()
+filemenu.add_command(label="Exit", command=root.quit)
+menubar.add_cascade(label="File", menu=filemenu)
+
+importmenu = Menu(menubar, tearoff=0)
+importmenu.add_command(label="Import Round Settings", command=donothing)
+importmenu.add_separator()
+importmenu.add_command(label="Import Single Round", command=donothing)
+importmenu.add_command(label="Import Screenshot", command=donothing)
+menubar.add_cascade(label="Import", menu=importmenu)
+
+datamenu = Menu(menubar, tearoff=0)
+datamenu.add_command(label="New Round", command=donothing)
+datamenu.add_command(label="New Driver", command=donothing)
+datamenu.add_separator()
+datamenu.add_command(label="Edit Round", command=donothing)
+datamenu.add_command(label="Edit Driver", command=donothing)
+menubar.add_cascade(label="Create", menu=datamenu)
+
+exportmenu = Menu(menubar, tearoff=0)
+exportmenu.add_command(label="Export Round List", command=donothing)
+exportmenu.add_command(label="Export Round Results", command=donothing)
+exportmenu.add_separator()
+exportmenu.add_command(label="Export Driver List", command=donothing)
+exportmenu.add_command(label="Export Driver Points", command=donothing)
+menubar.add_cascade(label="Export", menu=exportmenu)
+
+helpmenu = Menu(menubar, tearoff=0)
+helpmenu.add_command(label="Help Index", command=donothing)
+helpmenu.add_command(label="About...", command=donothing)
+menubar.add_cascade(label="Help", menu=helpmenu)
 
 
-# d = '5'
-# print(dr_num(d).driver)
-# print(dr_num(d).number)
-# for r, v in dr_num(d).results.items():
-#     print(r)
-#     print(v)
+# Main Window
+
+seriesinfoframe = LabelFrame(root)
+seriesinfoframe.grid(row=0, column=0, columnspan=2, padx=20, pady=20)
+Label(seriesinfoframe, textvariable=league_name, font=("", 18)).grid(row=0, column=0, sticky=W)
+Label(seriesinfoframe, textvariable=series_name, font=("", 14)).grid(row=1, column=0, sticky=W)
+logo_label = Label(seriesinfoframe, image=league_logo)
+logo_label.grid(row=0, column=1, rowspan=2, sticky=E)
+
+topdriversframe = LabelFrame(root, text="Top 15 Drivers", relief=SUNKEN)
+topdriversframe.grid(row=2, column=0, padx=10, pady=10)
+# topdrivers = Listbox(topdriversframe, height=15)
+# topdrivers.grid(row=0, column=0)
+# topdriverspoints = Listbox(topdriversframe, width=4, height=15)
+# topdriverspoints.grid(row=0, column=1)
 #
-# print(f"Total Points: {dr_num(d).total_points}")
-# print(dr_num(888).results)
-# dr_driver('w1holesale').print_info()
+# i = 0
+#
+# for d in driver_objects:
+#     if i < 15:
+#         topdrivers.insert(i, d.driver)
+#         topdriverspoints.insert(i, d.total_points)
+#         print(d.driver, d.total_points)
+#         i = i + 1
+
+# Writes top drivers
+Label(topdriversframe, text="Pos", padx=2, pady=2, bg="gray90").grid(row=0, column=0, sticky=E+W)
+Label(topdriversframe, text="Driver", padx=2, pady=2, bg="gray90").grid(row=0, column=1, sticky=E+W)
+Label(topdriversframe, text="Points", padx=2, pady=2, bg="gray90").grid(row=0, column=2, sticky=E+W)
+
+
+for i in range(15): #Rows
+    top_pos_driver = driver_objects[i].driver
+    top_pos_points = driver_objects[i].total_points
+    i = i + 1
+
+    top_pos = Label(topdriversframe, text=i, padx=2, pady=2)
+    top_pos.grid(row=i, column=0, sticky=E+W)
+
+    top_pos_driver = Label(topdriversframe, text=top_pos_driver, padx=8, pady=2)
+    top_pos_driver.grid(row=i, column=1, sticky=E+W)
+
+    top_pos_points = Label(topdriversframe, text=top_pos_points, padx=2, pady=2)
+    top_pos_points.grid(row=i, column=2, sticky=E+W)
+
+    for r in range(3):
+        if (i % 2) == 0:
+            top_pos.configure(bg="gray99")
+            # top_pos.rowconfigure(topdriversframe, i, weight=1)
+            top_pos_driver.configure(bg="gray99")
+            top_pos_driver.rowconfigure(i, weight=1)
+            top_pos_points.configure(bg="gray99")
+
+
+
+
+
+
+
+
+
+
+
+root.config(menu=menubar)
+root.mainloop()
+
+
+
+
+
