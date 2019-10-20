@@ -582,9 +582,12 @@ def new_league():
         # league_logo = ImageTk.PhotoImage(league_logo)
         # logo_label.configure(image=league_logo)
 
+        global driver_objects
+        driver_objects = import_csv(csvfile)
+        driver_objects.sort(key=lambda x: x.total_points, reverse=True)
 
-        # global driver_objects
-        # driver_objects = import_csv(csv)
+        top_drivers_main()
+        quicktools_state()
 
     newleaguewindow = Toplevel()
     new_league_frame = LabelFrame(newleaguewindow, text="Create New League")
@@ -592,23 +595,30 @@ def new_league():
 
     nameentry = Entry(new_league_frame)
     Label(new_league_frame, text="League Name").grid(row=0, column=0, sticky=W, pady=5, padx=5)
-    nameentry.grid(row=0, column=1, padx=5)
+    nameentry.grid(row=0, column=1, columnspan=2, padx=5)
 
     nameshortentry = Entry(new_league_frame)
     Label(new_league_frame, text="Short Name").grid(row=1, column=0, sticky=W, pady=5, padx=5)
-    nameshortentry.grid(row=1, column=1, padx=5)
+    nameshortentry.grid(row=1, column=1, columnspan=2, padx=5)
 
     seriesentry = Entry(new_league_frame)
     Label(new_league_frame, text="Series Name").grid(row=2, column=0, sticky=W, pady=5, padx=5)
-    seriesentry.grid(row=2, column=1, padx=5)
+    seriesentry.grid(row=2, column=1, columnspan=2, padx=5)
 
     def choose_csv():
         global csvfile
-        csvfile = filedialog.askopenfilename(initialdir="", title="Select Driver List CSV")
+        csvfile = filedialog.askopenfilename(initialdir="", title="Select Driver List CSV",
+                                             filetypes=[("CSV files", "*.csv")])
+        if csvfile:
+            validcsv.configure(text="OK", fg="black")
 
     Label(new_league_frame, text="Driver List").grid(row=3, column=0, sticky=W, pady=5, padx=5)
     Button(new_league_frame, text="choose csv", command=choose_csv,
            ).grid(row=3, column=1, pady=5, padx=5)
+
+    global validcsv
+    validcsv = Label(new_league_frame, text="X", fg="red")
+    validcsv.grid(row=3, column=2, pady=5, padx=5)
 
     def choose_logo():
         global logofile
@@ -619,21 +629,22 @@ def new_league():
     # Button(new_league_frame, text="choose image", command=choose_logo,
     #        ).grid(row=4, column=1, pady=5, padx=5)
 
-    Button(new_league_frame, text="Start New League", command=finish).grid(row=5, column=0, columnspan=2, padx=15, pady=15)
+    Button(new_league_frame, text="Start New League", command=finish).grid(row=5, column=0, columnspan=3, padx=15, pady=15)
 
 
 driver_objects = []
-driver_objects = import_csv('RR_Sample.csv')
+# User below code for testing
+# driver_objects = import_csv('RR_Sample.csv')
 # Sorts Driver objects by total points
-if driver_objects:
-    driver_objects.sort(key=lambda x: x.total_points, reverse=True)
+# if driver_objects:
+#     driver_objects.sort(key=lambda x: x.total_points, reverse=True)
 league_info = {}
-league_logo = ""
+# league_info = {"name": "eSports Global Tournament", "shortname": "eSGT", "series": "GT3 Series"}
 
 # creates the base level window
 root = Tk()
 root.title("GTS League Management Tool - Ver Alpha 0.1")
-root.geometry('400x500')
+# root.geometry('400x500')
 
 league_name = StringVar()
 league_name.set(league_info.get("name"))
@@ -683,63 +694,89 @@ menubar.add_cascade(label="Help", menu=helpmenu)
 
 # Main Window
 
-seriesinfoframe = LabelFrame(root)
-seriesinfoframe.grid(row=0, column=0, columnspan=2, padx=20, pady=20)
+seriesinfoframe = LabelFrame(root, relief=RIDGE)
+seriesinfoframe.grid(row=0, column=0, columnspan=2, padx=10, pady=10, sticky=NW)
 Label(seriesinfoframe, textvariable=league_name, font=("", 18)).grid(row=0, column=0, sticky=W)
 Label(seriesinfoframe, textvariable=series_name, font=("", 14)).grid(row=1, column=0, sticky=W)
-logo_label = Label(seriesinfoframe, image=league_logo)
-logo_label.grid(row=0, column=1, rowspan=2, sticky=E)
+# logo_label = Label(seriesinfoframe, image=league_logo)
+# logo_label.grid(row=0, column=1, rowspan=2, sticky=NE)
 
 topdriversframe = LabelFrame(root, text="Top 15 Drivers", relief=SUNKEN)
-topdriversframe.grid(row=2, column=0, padx=10, pady=10)
-# topdrivers = Listbox(topdriversframe, height=15)
-# topdrivers.grid(row=0, column=0)
-# topdriverspoints = Listbox(topdriversframe, width=4, height=15)
-# topdriverspoints.grid(row=0, column=1)
-#
-# i = 0
-#
-# for d in driver_objects:
-#     if i < 15:
-#         topdrivers.insert(i, d.driver)
-#         topdriverspoints.insert(i, d.total_points)
-#         print(d.driver, d.total_points)
-#         i = i + 1
-
-# Writes top drivers
-Label(topdriversframe, text="Pos", padx=2, pady=2, bg="gray90").grid(row=0, column=0, sticky=E+W)
-Label(topdriversframe, text="Driver", padx=2, pady=2, bg="gray90").grid(row=0, column=1, sticky=E+W)
-Label(topdriversframe, text="Points", padx=2, pady=2, bg="gray90").grid(row=0, column=2, sticky=E+W)
+topdriversframe.grid(row=2, column=0, padx=10, pady=10, sticky=NW)
+notopdrivers = Label(topdriversframe, text="No Driver Entries")
 
 
-for i in range(15): #Rows
-    top_pos_driver = driver_objects[i].driver
-    top_pos_points = driver_objects[i].total_points
-    i = i + 1
+def top_drivers_main():
+    # Writes top drivers
+    # Top Drivers Headings.
+    global notopdrivers
+    if driver_objects:
+        notopdrivers.destroy()
+        Label(topdriversframe, text="Pos", padx=2, pady=2, bg="gray90").grid(row=0, column=0, padx=(5, 0), sticky=E + W)
+        Label(topdriversframe, text="Driver", padx=2, pady=2, bg="gray90").grid(row=0, column=1, sticky=E + W)
+        Label(topdriversframe, text="Points", padx=2, pady=2, bg="gray90").grid(row=0, column=2, padx=(0, 5), sticky=E + W)
 
-    top_pos = Label(topdriversframe, text=i, padx=2, pady=2)
-    top_pos.grid(row=i, column=0, sticky=E+W)
+        # Top Drivers List
+        for i in range(15):  # Rows
+            top_pos_driver = driver_objects[i].driver
+            top_pos_points = driver_objects[i].total_points
+            i = i + 1
 
-    top_pos_driver = Label(topdriversframe, text=top_pos_driver, padx=8, pady=2)
-    top_pos_driver.grid(row=i, column=1, sticky=E+W)
+            top_pos = Label(topdriversframe, text=i, padx=2, pady=2)
+            top_pos.grid(row=i, column=0, sticky=E + W)
 
-    top_pos_points = Label(topdriversframe, text=top_pos_points, padx=2, pady=2)
-    top_pos_points.grid(row=i, column=2, sticky=E+W)
+            top_pos_driver = Label(topdriversframe, text=top_pos_driver, padx=8, pady=2)
+            top_pos_driver.grid(row=i, column=1, sticky=E + W)
 
-    for r in range(3):
-        if (i % 2) == 0:
-            top_pos.configure(bg="gray99")
-            # top_pos.rowconfigure(topdriversframe, i, weight=1)
-            top_pos_driver.configure(bg="gray99")
-            top_pos_driver.rowconfigure(i, weight=1)
-            top_pos_points.configure(bg="gray99")
+            top_pos_points = Label(topdriversframe, text=top_pos_points, padx=2, pady=2)
+            top_pos_points.grid(row=i, column=2, sticky=E + W)
+
+            for r in range(3):
+                if (i % 2) == 0:
+                    top_pos.configure(bg="gray99")
+                    # top_pos.rowconfigure(topdriversframe, i, weight=1)
+                    top_pos_driver.configure(bg="gray99")
+                    top_pos_driver.rowconfigure(i, weight=1)
+                    top_pos_points.configure(bg="gray99")
+    else:
+        notopdrivers.pack(padx=10, pady=(5, 10))
 
 
+top_drivers_main()
+
+# Quick Tools
+quicktoolsframe = LabelFrame(root, text="Quick Tools")
+quicktoolsframe.grid(row=2, column=1, padx=10, pady=10, sticky=NE)
+qtpadx = 10
+qtpady = 10
+b1 = Button(quicktoolsframe, text="Driver List", command=donothing, width=20)
+b1.pack(padx=qtpadx, pady=qtpady)
+b2 = Button(quicktoolsframe, text="Import Round Results", command=donothing, width=20)
+b2.pack(padx=qtpadx, pady=qtpady)
+b3 = Button(quicktoolsframe, text="Export Round Results", command=donothing, width=20)
+b3.pack(padx=qtpadx, pady=qtpady)
+b4 = Button(quicktoolsframe, text="Export Top 15", command=donothing, width=20)
+b4.pack(padx=qtpadx, pady=qtpady)
+b5 = Button(quicktoolsframe, text="Export CSV", command=donothing, width=20)
+b5.pack(padx=qtpadx, pady=qtpady)
 
 
+def quicktools_state():
+    if driver_objects:
+        b1.config(state=NORMAL)
+        b2.config(state=NORMAL)
+        b3.config(state=NORMAL)
+        b4.config(state=NORMAL)
+        b5.config(state=NORMAL)
+    else:
+        b1.config(state=DISABLED)
+        b2.config(state=DISABLED)
+        b3.config(state=DISABLED)
+        b4.config(state=DISABLED)
+        b5.config(state=DISABLED)
 
 
-
+quicktools_state()
 
 
 
