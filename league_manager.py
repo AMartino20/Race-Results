@@ -362,12 +362,12 @@ def dr_driver(search):
             return x
 
 
-def list_drivers(lower=False, sort=""):
+def list_drivers(sort):
     if sort == "points":
         sortedlist = sorted(driver_objects, key=lambda x: x.total_points, reverse=True)
         return sortedlist
     elif sort == "psn":
-        sortedlist = sorted(driver_objects, key=lambda x: x.driver)
+        sortedlist = sorted(driver_objects, key=lambda x: x.driver.lower())
         return sortedlist
     elif sort == "num":
         sortedlist = sorted(driver_objects, key=lambda x: x.number)
@@ -571,10 +571,10 @@ def new_league():
     def finish():
         global csvlocation_league
         if not nameentry.get() or not seriesentry.get():
-            messagebox.showwarning("Empty Fields", "Name and Series required")
+            messagebox.showerror("Empty Fields", "Name and Series required")
 
         elif csvlocation_league is None:
-            messagebox.showwarning("No CSV Selected", "Please choose a CSV file to import.")
+            messagebox.showerror("No CSV Selected", "Please choose a CSV file to import.")
 
         else:
             global league_info
@@ -665,6 +665,30 @@ def edit_driver():
     def new_driver():
         pass
 
+    def save_driver():
+        #this is the next project
+        if not newdriver:
+            d = dr_driver(selected.get())
+            if not d:
+                messagebox.showerror("Error: No Driver Selected", "Error: No Driver Selected")
+            else:
+                if changepsn == 1:
+                    r = messagebox.askokcancel("Edit Driver PSN?", "Click OK to change Driver Name")
+                    if r == 0:
+                        pass
+                    elif r == 1:
+                        validate_driver_data(d)
+
+    def validate_driver_data(driver):
+        # validate psn
+        if changepsn == 1:
+            if " " in psnentry:
+                messagebox.showerror("Error", "Error: Cannot have space in PSN")
+
+
+
+    # will use this to change options to allow new driver.
+    # Should be simpler than two nearly identical windows
     newdriver = False
 
     driverinfowindow = Toplevel()
@@ -673,43 +697,79 @@ def edit_driver():
     edit_driver_frame = LabelFrame(driverinfowindow, text="Create New League")
     edit_driver_frame.pack(padx=10, pady=10)
 
-    nameentry = Entry(edit_driver_frame)
+    selected = StringVar()
+    newpsn = StringVar()
+    selected.set("Select Driver")
+    sorted_drivers = list_drivers("psn")
+    driverlist = [f"{x.driver}" for x in sorted_drivers]
+
+    def select_psn(*args):
+        newpsn.set(f"{selected.get()}")
+
+    def check_new_psn():
+        if changepsn.get() == 1:
+            psnentry.configure(state=NORMAL)
+        elif changepsn.get() == 0:
+            psnentry.configure(state=DISABLED)
+
+    choosedriver = OptionMenu(edit_driver_frame, selected, *driverlist)
+    selected.trace_variable('w', select_psn)
+
     Label(edit_driver_frame, text="Driver PSN:").grid(row=0, column=0, sticky=W, pady=5, padx=5)
-    nameentry.grid(row=0, column=1, columnspan=2, padx=5)
+    choosedriver.grid(row=0, column=2, padx=5, sticky=E+W)
+
+    changepsn = IntVar()
+    Checkbutton(edit_driver_frame, variable=changepsn, command=check_new_psn).grid(row=1, column=1)
+
+    psnentry = Entry(edit_driver_frame, state=DISABLED, textvariable=newpsn)
+    Label(edit_driver_frame, text="Edit PSN:").grid(row=1, column=0, sticky=W, pady=5, padx=5)
+    psnentry.grid(row=1, column=2, padx=5)
+
+    nameentry = Entry(edit_driver_frame)
+    Label(edit_driver_frame, text="Real Name:*").grid(row=2, column=0, sticky=W, pady=5, padx=5)
+    nameentry.grid(row=2, column=2, padx=5)
 
     numentry = Entry(edit_driver_frame)
-    Label(edit_driver_frame, text="Driver Number:").grid(row=1, column=0, sticky=W, pady=5, padx=5)
-    numentry.grid(row=1, column=1, columnspan=2, padx=5)
+    Label(edit_driver_frame, text="Driver Number:").grid(row=3, column=0, sticky=W, pady=5, padx=5)
+    numentry.grid(row=3, column=2, padx=5)
 
     nationentry = Entry(edit_driver_frame)
-    Label(edit_driver_frame, text="Nation:").grid(row=2, column=0, sticky=W, pady=5, padx=5)
-    nationentry.grid(row=2, column=1, columnspan=2, padx=5)
+    Label(edit_driver_frame, text="Nation:").grid(row=4, column=0, sticky=W, pady=5, padx=5)
+    nationentry.grid(row=4, column=2, padx=5)
 
     affilentry = Entry(edit_driver_frame)
-    Label(edit_driver_frame, text="Driver Number:").grid(row=3, column=0, sticky=W, pady=5, padx=5)
-    affilentry.grid(row=3, column=1, columnspan=2, padx=5)
+    Label(edit_driver_frame, text="Affiliation:").grid(row=5, column=0, sticky=W, pady=5, padx=5)
+    affilentry.grid(row=5, column=2, padx=5)
 
     manuentry = Entry(edit_driver_frame)
-    Label(edit_driver_frame, text="Driver Number:").grid(row=3, column=0, sticky=W, pady=5, padx=5)
-    manuentry.grid(row=3, column=1, columnspan=2, padx=5)
+    Label(edit_driver_frame, text="Manufacturer:").grid(row=6, column=0, sticky=W, pady=5, padx=5)
+    manuentry.grid(row=6, column=2, padx=5)
+
+    Button(edit_driver_frame, text="Save Driver", command=save_driver).grid(row=7, column=0, columnspan=3, padx=15, pady=15)
 
 
-def load_screenshot():
-    pass
+
+
 
 
 driver_objects = []
 csvlocation_league = None
-# User below code for testing
-driver_objects = import_csv('RR_Sample.csv')
-# Sorts Driver objects by total points
-
 league_info = {"name": "League Name", "series": "Series Name"}
 
 # creates the base level window
 root = Tk()
 root.title("GTS League Management Tool - Ver Alpha 0.1")
 # root.geometry('400x500')
+
+
+def test_league():
+    global driver_objects
+    driver_objects = import_csv('RR_Sample.csv')
+    global league_info
+    league_info = {"name": "eSports Global Tournament", "shortname": "eSGT", "series": "GT3 Series"}
+
+
+test_league()
 
 league_name = StringVar()
 league_name.set(league_info.get("name"))
