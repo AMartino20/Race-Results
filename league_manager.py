@@ -4,6 +4,7 @@ import csv
 from fuzzywuzzy import process
 from tkinter import *
 from tkinter import filedialog
+import os
 from PIL import ImageTk, Image
 import pickle
 
@@ -611,10 +612,15 @@ def new_league():
                                              filetypes=[("CSV files", "*.csv")])
         if csvfile:
             validcsv.configure(text="OK", fg="black")
+            csvname = StringVar()
+            csvname.set(os.path.basename(csvfile))
+            Label(new_league_frame, textvariable=csvname).grid(row=4, column=1, columnspan=2)
 
     Label(new_league_frame, text="Driver List").grid(row=3, column=0, sticky=W, pady=5, padx=5)
     Button(new_league_frame, text="choose csv", command=choose_csv,
            ).grid(row=3, column=1, pady=5, padx=5)
+
+
 
     global validcsv
     validcsv = Label(new_league_frame, text="X", fg="red")
@@ -632,14 +638,17 @@ def new_league():
     Button(new_league_frame, text="Start New League", command=finish).grid(row=5, column=0, columnspan=3, padx=15, pady=15)
 
 
+def load_screenshot():
+    pass
+
+
 driver_objects = []
 # User below code for testing
 # driver_objects = import_csv('RR_Sample.csv')
 # Sorts Driver objects by total points
 # if driver_objects:
 #     driver_objects.sort(key=lambda x: x.total_points, reverse=True)
-league_info = {}
-# league_info = {"name": "eSports Global Tournament", "shortname": "eSGT", "series": "GT3 Series"}
+league_info = {"name": "League Name", "series": "Series Name"}
 
 # creates the base level window
 root = Tk()
