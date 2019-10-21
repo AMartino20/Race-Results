@@ -4,6 +4,7 @@ import csv
 from fuzzywuzzy import process
 from tkinter import *
 from tkinter import filedialog
+from tkinter import messagebox
 import os
 from PIL import ImageTk, Image
 import pickle
@@ -561,36 +562,48 @@ def nodata():
 
 def new_league():
     def finish():
-        global league_info
-        league_info["name"] = nameentry.get()
-        league_info["series"] = seriesentry.get()
-        league_info["shortname"] = nameshortentry.get()
-        # league_info["logo"] = logofile
-        # league_info["csv"] = csvfile
+        global csvlocation_league
+        if not nameentry.get() or not seriesentry.get():
+            messagebox.showwarning("Empty Fields", "Name and Series required")
 
-        new_league_frame.grid_forget()
-        new_league_frame.destroy()
-        newleaguewindow.destroy()
+        elif csvlocation_league is None:
+            messagebox.showwarning("No CSV Selected", "Please choose a CSV file to import.")
 
-        global league_name
-        league_name.set(league_info.get("name"))
-        global series_name
-        series_name.set(league_info.get("series"))
-        # global league_logo
-        # # league_logo = ImageTk.PhotoImage(Image.open(logofile))
-        # league_logo = Image.open(logofile)
-        # league_logo = league_logo.resize((200,200), Image.ANTIALIAS)
-        # league_logo = ImageTk.PhotoImage(league_logo)
-        # logo_label.configure(image=league_logo)
+        else:
+            global league_info
+            league_info["name"] = nameentry.get()
+            league_info["series"] = seriesentry.get()
+            league_info["shortname"] = nameshortentry.get()
+            # league_info["logo"] = logofile
+            league_info["csv"] = csvlocation_league
+            csvlocation_league = None
 
-        global driver_objects
-        driver_objects = import_csv(csvfile)
-        driver_objects.sort(key=lambda x: x.total_points, reverse=True)
+            new_league_frame.grid_forget()
+            new_league_frame.destroy()
+            newleaguewindow.destroy()
 
-        top_drivers_main()
-        quicktools_state()
+            global league_name
+            global series_name
+            league_name.set(league_info.get("name"))
+            series_name.set(league_info.get("series"))
+            # global league_logo
+            # # league_logo = ImageTk.PhotoImage(Image.open(logofile))
+            # league_logo = Image.open(logofile)
+            # league_logo = league_logo.resize((200,200), Image.ANTIALIAS)
+            # league_logo = ImageTk.PhotoImage(league_logo)
+            # logo_label.configure(image=league_logo)
+
+            global driver_objects
+            driver_objects = import_csv(league_info["csv"])
+            # Sort by total number of points
+            driver_objects.sort(key=lambda x: x.total_points, reverse=True)
+
+            top_drivers_main()
+            quicktools_state()
 
     newleaguewindow = Toplevel()
+    newleaguewindow.attributes('-topmost', 'true')
+
     new_league_frame = LabelFrame(newleaguewindow, text="Create New League")
     new_league_frame.pack(padx=10, pady=10)
 
@@ -599,7 +612,7 @@ def new_league():
     nameentry.grid(row=0, column=1, columnspan=2, padx=5)
 
     nameshortentry = Entry(new_league_frame)
-    Label(new_league_frame, text="Short Name").grid(row=1, column=0, sticky=W, pady=5, padx=5)
+    Label(new_league_frame, text="Short Name*").grid(row=1, column=0, sticky=W, pady=5, padx=5)
     nameshortentry.grid(row=1, column=1, columnspan=2, padx=5)
 
     seriesentry = Entry(new_league_frame)
@@ -607,20 +620,23 @@ def new_league():
     seriesentry.grid(row=2, column=1, columnspan=2, padx=5)
 
     def choose_csv():
-        global csvfile
-        csvfile = filedialog.askopenfilename(initialdir="", title="Select Driver List CSV",
+        global csvlocation_league
+        csvlocation_league = filedialog.askopenfilename(initialdir="", title="Select Driver List CSV",
                                              filetypes=[("CSV files", "*.csv")])
-        if csvfile:
+
+        if csvlocation_league:
+            # Adds error checking information to window
             validcsv.configure(text="OK", fg="black")
             csvname = StringVar()
-            csvname.set(os.path.basename(csvfile))
+            csvname.set(os.path.basename(csvlocation_league))
             Label(new_league_frame, textvariable=csvname).grid(row=4, column=1, columnspan=2)
+
+        else:
+            csvlocation_league = None
 
     Label(new_league_frame, text="Driver List").grid(row=3, column=0, sticky=W, pady=5, padx=5)
     Button(new_league_frame, text="choose csv", command=choose_csv,
            ).grid(row=3, column=1, pady=5, padx=5)
-
-
 
     global validcsv
     validcsv = Label(new_league_frame, text="X", fg="red")
@@ -643,6 +659,7 @@ def load_screenshot():
 
 
 driver_objects = []
+csvlocation_league = None
 # User below code for testing
 # driver_objects = import_csv('RR_Sample.csv')
 # Sorts Driver objects by total points
@@ -704,9 +721,9 @@ menubar.add_cascade(label="Help", menu=helpmenu)
 # Main Window
 
 seriesinfoframe = LabelFrame(root, relief=RIDGE)
-seriesinfoframe.grid(row=0, column=0, columnspan=2, padx=10, pady=10, sticky=NW)
-Label(seriesinfoframe, textvariable=league_name, font=("", 18)).grid(row=0, column=0, sticky=W)
-Label(seriesinfoframe, textvariable=series_name, font=("", 14)).grid(row=1, column=0, sticky=W)
+seriesinfoframe.grid(row=0, column=0, columnspan=2, padx=10, pady=(15, 10), sticky=N+E+S+W)
+Label(seriesinfoframe, textvariable=league_name, font=("", 18)).grid(row=0, column=0, padx=5, pady=5, sticky=W)
+Label(seriesinfoframe, textvariable=series_name, font=("", 14)).grid(row=1, column=0, padx=5, pady=5,sticky=W)
 # logo_label = Label(seriesinfoframe, image=league_logo)
 # logo_label.grid(row=0, column=1, rowspan=2, sticky=NE)
 
@@ -787,9 +804,7 @@ def quicktools_state():
 
 quicktools_state()
 
-
-
-
+root.resizable(False, False)
 root.config(menu=menubar)
 root.mainloop()
 
