@@ -31,10 +31,10 @@ class User:
         self.affiliation = Affiliation
         self.manufacturer = Manufacturer
         self.kwargs = kwargs
-        # results data format
+        # results data formatting
         self.raw_results = {}
         self.results = {}
-        self.total_points = ''  # This will probably be defined by a function
+        self.total_points = ''  # This is defined at end of format_points()
         # might not need a points variable? Maybe it should be a list if I do need it?
         # self.points = []
         # run functions below here
@@ -362,19 +362,26 @@ def dr_driver(search):
             return x
 
 
-def list_drivers(lower=False, pr=''):
-    # putting p as the arg prints a list line by line, otherwise returns list
-    for d in driver_objects:
-        if pr == 'p':
-            print(d.driver, d.number)
-    dl = []
-    if pr != 'p':
-        for d in driver_objects:
-            if lower:
-                dl.append(d.driver.lower())
-            else:
-                dl.append(d.driver)
-        return dl
+def list_drivers(lower=False, sort=""):
+    if sort == "points":
+        sortedlist = sorted(driver_objects, key=lambda x: x.total_points, reverse=True)
+        return sortedlist
+    elif sort == "psn":
+        sortedlist = sorted(driver_objects, key=lambda x: x.driver)
+        return sortedlist
+    elif sort == "num":
+        sortedlist = sorted(driver_objects, key=lambda x: x.number)
+        return sortedlist
+    else:
+        sortedlist = driver_objects
+
+    # dl = []
+    # for d in sortedlist:
+    #     if lower:
+    #         dl.append(d.driver.lower())
+    #     else:
+    #         dl.append(d.driver)
+    # return dl
 
 
 # Image Processing Functions
@@ -596,9 +603,9 @@ def new_league():
             global driver_objects
             driver_objects = import_csv(league_info["csv"])
             # Sort by total number of points
-            driver_objects.sort(key=lambda x: x.total_points, reverse=True)
+            top_drivers = sorted(driver_objects, key=lambda x: x.total_points, reverse=True)
 
-            top_drivers_main()
+            top_drivers_main(top_drivers)
             quicktools_state()
 
     newleaguewindow = Toplevel()
@@ -654,6 +661,39 @@ def new_league():
     Button(new_league_frame, text="Start New League", command=finish).grid(row=5, column=0, columnspan=3, padx=15, pady=15)
 
 
+def edit_driver():
+    def new_driver():
+        pass
+
+    newdriver = False
+
+    driverinfowindow = Toplevel()
+    driverinfowindow.attributes('-topmost', 'true')
+
+    edit_driver_frame = LabelFrame(driverinfowindow, text="Create New League")
+    edit_driver_frame.pack(padx=10, pady=10)
+
+    nameentry = Entry(edit_driver_frame)
+    Label(edit_driver_frame, text="Driver PSN:").grid(row=0, column=0, sticky=W, pady=5, padx=5)
+    nameentry.grid(row=0, column=1, columnspan=2, padx=5)
+
+    numentry = Entry(edit_driver_frame)
+    Label(edit_driver_frame, text="Driver Number:").grid(row=1, column=0, sticky=W, pady=5, padx=5)
+    numentry.grid(row=1, column=1, columnspan=2, padx=5)
+
+    nationentry = Entry(edit_driver_frame)
+    Label(edit_driver_frame, text="Nation:").grid(row=2, column=0, sticky=W, pady=5, padx=5)
+    nationentry.grid(row=2, column=1, columnspan=2, padx=5)
+
+    affilentry = Entry(edit_driver_frame)
+    Label(edit_driver_frame, text="Driver Number:").grid(row=3, column=0, sticky=W, pady=5, padx=5)
+    affilentry.grid(row=3, column=1, columnspan=2, padx=5)
+
+    manuentry = Entry(edit_driver_frame)
+    Label(edit_driver_frame, text="Driver Number:").grid(row=3, column=0, sticky=W, pady=5, padx=5)
+    manuentry.grid(row=3, column=1, columnspan=2, padx=5)
+
+
 def load_screenshot():
     pass
 
@@ -661,10 +701,9 @@ def load_screenshot():
 driver_objects = []
 csvlocation_league = None
 # User below code for testing
-# driver_objects = import_csv('RR_Sample.csv')
+driver_objects = import_csv('RR_Sample.csv')
 # Sorts Driver objects by total points
-# if driver_objects:
-#     driver_objects.sort(key=lambda x: x.total_points, reverse=True)
+
 league_info = {"name": "League Name", "series": "Series Name"}
 
 # creates the base level window
@@ -679,7 +718,6 @@ series_name.set(league_info.get("series"))
 
 
 # Menu Bar
-
 menubar = Menu(root)
 filemenu = Menu(menubar, tearoff=0)
 filemenu.add_command(label="New League", command=new_league)
@@ -701,8 +739,8 @@ datamenu.add_command(label="New Round", command=donothing)
 datamenu.add_command(label="New Driver", command=donothing)
 datamenu.add_separator()
 datamenu.add_command(label="Edit Round", command=donothing)
-datamenu.add_command(label="Edit Driver", command=donothing)
-menubar.add_cascade(label="Create", menu=datamenu)
+datamenu.add_command(label="Edit Driver", command=edit_driver)
+menubar.add_cascade(label="Data", menu=datamenu)
 
 exportmenu = Menu(menubar, tearoff=0)
 exportmenu.add_command(label="Export Round List", command=donothing)
@@ -719,7 +757,6 @@ menubar.add_cascade(label="Help", menu=helpmenu)
 
 
 # Main Window
-
 seriesinfoframe = LabelFrame(root, relief=RIDGE)
 seriesinfoframe.grid(row=0, column=0, columnspan=2, padx=10, pady=(15, 10), sticky=N+E+S+W)
 Label(seriesinfoframe, textvariable=league_name, font=("", 18)).grid(row=0, column=0, padx=5, pady=5, sticky=W)
@@ -732,11 +769,12 @@ topdriversframe.grid(row=2, column=0, padx=10, pady=10, sticky=NW)
 notopdrivers = Label(topdriversframe, text="No Driver Entries")
 
 
-def top_drivers_main():
+def top_drivers_main(list):
     # Writes top drivers
     # Top Drivers Headings.
+
     global notopdrivers
-    if driver_objects:
+    if list:
         notopdrivers.destroy()
         Label(topdriversframe, text="Pos", padx=2, pady=2, bg="gray90").grid(row=0, column=0, padx=(5, 0), sticky=E + W)
         Label(topdriversframe, text="Driver", padx=2, pady=2, bg="gray90").grid(row=0, column=1, sticky=E + W)
@@ -744,8 +782,8 @@ def top_drivers_main():
 
         # Top Drivers List
         for i in range(15):  # Rows
-            top_pos_driver = driver_objects[i].driver
-            top_pos_points = driver_objects[i].total_points
+            top_pos_driver = list[i].driver
+            top_pos_points = list[i].total_points
             i = i + 1
 
             top_pos = Label(topdriversframe, text=i, padx=2, pady=2)
@@ -768,7 +806,7 @@ def top_drivers_main():
         notopdrivers.pack(padx=10, pady=(5, 10))
 
 
-top_drivers_main()
+top_drivers_main(list_drivers(sort="points"))
 
 # Quick Tools
 quicktoolsframe = LabelFrame(root, text="Quick Tools")
