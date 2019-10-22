@@ -786,6 +786,11 @@ def edit_driver():
             # manuentry.delete(0, END)
             # manuentry.insert(0, d.manufacturer)
 
+            if d.active:
+                activebtn.select()
+            else:
+                activebtn.deselect()
+
     def check_new_psn():
         if changepsn.get() == 1:
             psnentry.configure(state=NORMAL)
@@ -832,8 +837,13 @@ def edit_driver():
     Label(edit_driver_frame, text="Manufacturer:").grid(row=7, column=0, sticky=W, pady=5, padx=5)
     manuentry.grid(row=7, column=2, padx=5, sticky=E+W)
 
-    Button(edit_driver_frame, text="Cancel", command=cancel, padx=10).grid(row=8, column=0, padx=15, pady=15, sticky=W)
-    Button(edit_driver_frame, text="Save Driver", command=save_driver, padx=10).grid(row=8, column=2, padx=15, pady=15, sticky=E)
+    activecheck = IntVar
+    Label(edit_driver_frame, text="Active Driver").grid(row=8, column=0, sticky=W)
+    activebtn = Checkbutton(edit_driver_frame, variable=activecheck)
+    activebtn.grid(row=8, column=2)
+
+    Button(edit_driver_frame, text="Cancel", command=cancel, padx=10).grid(row=9, column=0, padx=15, pady=15, sticky=W)
+    Button(edit_driver_frame, text="Save Driver", command=save_driver, padx=10).grid(row=9, column=2, padx=15, pady=15, sticky=E)
 
 
 
