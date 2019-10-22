@@ -6,6 +6,7 @@ from tkinter import *
 from tkinter import filedialog
 from tkinter import messagebox
 import os
+import pycountry
 from PIL import ImageTk, Image
 import pickle
 
@@ -21,7 +22,7 @@ class User:
                 'Nissan', 'Subaru', 'Toyota', 'Lexus', 'Hyundai', 'Aston Martin',
                 'Jaguar', 'Mclaren', 'Audi', 'BMW', 'Mercedes-Benz', 'Volkswagen',
                 'Porsche', 'Citroen', 'Peugeot', 'Renault Sport', 'Alfa Romeo',
-                'Ferrari', 'Lamborghini"')
+                'Ferrari', 'Lamborghini')
 
     def __init__(self, Driver, Name, Number, Nation, Affiliation, Manufacturer, **kwargs):
         self.driver = Driver
@@ -30,6 +31,7 @@ class User:
         self.nation = Nation
         self.affiliation = Affiliation
         self.manufacturer = Manufacturer
+        self.active = True
         self.kwargs = kwargs
         # results data formatting
         self.raw_results = {}
@@ -373,7 +375,7 @@ def list_drivers(sort):
         sortedlist = sorted(driver_objects, key=lambda x: x.number)
         return sortedlist
     else:
-        sortedlist = driver_objects
+        return driver_objects
 
     # dl = []
     # for d in sortedlist:
@@ -665,27 +667,82 @@ def edit_driver():
     def new_driver():
         pass
 
+    def cancel():
+        edit_driver_frame.grid_forget()
+        edit_driver_frame.destroy()
+        driverinfowindow.destroy()
+
     def save_driver():
-        #this is the next project
-        if not newdriver:
+        # This is only here to remove error of not undefined var
+        driver = False
+
+        if newdriver:
+            pass
+
+        elif not newdriver:
+
             d = dr_driver(selected.get())
-            if not d:
-                messagebox.showerror("Error: No Driver Selected", "Error: No Driver Selected")
-            else:
-                if changepsn == 1:
+            if d is None:
+                messagebox.showerror("Error", "Error:\nNo Driver Selected")
+                return
+
+            if selected.get() != newpsn.get():
+                # Sets driver var by checking if checkbox is checked, if true use entry, if false use selected
+                if changepsn.get() == 1:
                     r = messagebox.askokcancel("Edit Driver PSN?", "Click OK to change Driver Name")
                     if r == 0:
-                        pass
-                    elif r == 1:
-                        validate_driver_data(d)
+                        return
+                    if r == 1:
+                        driver = newpsn.get()
+            elif changepsn.get() == 0:
+                driver = selected.get()
 
-    def validate_driver_data(driver):
-        # validate psn
-        if changepsn == 1:
-            if " " in psnentry:
-                messagebox.showerror("Error", "Error: Cannot have space in PSN")
+        if driver:
+            if  3 >= len(driver) > 16:
+                messagebox.showerror("Error", "Error:\nPSN must be between 3 and 16 characters.")
+                return
+            elif " " in driver:
+                messagebox.showerror("Error", "Error:\nDriver PSN can not have spaces.")
+                return
+            elif driver != selected.get():
+                if driver in [x.driver for x in driver_objects]:
+                    messagebox.showerror("Error", "Error:\nDriver PSN already in use.")
+                    return
+
+        # Checks if numentry is empty, NOT if string is 0
+        if len(numentry.get()) == 0:
+            messagebox.showerror("Error", "Error:\nPlease enter driver number.")
+            return
+
+        # Checks for # sign, removes if found. redefines numentry as n
+        n = numentry.get()
+        n = n.replace("#", "")
+
+        if len(n) == 0 or len(n) >3:
+            messagebox.showerror("Error", "Error:\nDriver Number must be between 1 and 3 numbers.")
+            return
+
+        # The idea for this is that if driver number matches driver, skip
+        for x in driver_objects:
+            if n == x.number and driver.lower() == x.driver.lower():
+                pass
+            elif n == x.number:
+                messagebox.showerror("Error", f"Error:\nDriver Number already in use by {x.driver}.")
+                return
+
+        if len(nationentry.get()) == 0:
+            messagebox.showerror("Error", "Error:\nPlease enter driver nation.")
+            return
+        elif nationentry.get().upper() not in [country.alpha_3 for country in pycountry.countries]:
+            messagebox.showerror("Error", "Error:\nPlease enter correct 3 digit country code.")
+            return
 
 
+
+
+
+        print(f"{selected.get()}\n{newpsn.get()}\n{nameentry.get()}\n{n}\n"
+              f"{nationentry.get()}\n{affilentry.get()}\n{selected_manu.get()}")
 
     # will use this to change options to allow new driver.
     # Should be simpler than two nearly identical windows
@@ -694,28 +751,58 @@ def edit_driver():
     driverinfowindow = Toplevel()
     driverinfowindow.attributes('-topmost', 'true')
 
-    edit_driver_frame = LabelFrame(driverinfowindow, text="Create New League")
+    edit_driver_frame = LabelFrame(driverinfowindow, text="Edit Driver")
     edit_driver_frame.pack(padx=10, pady=10)
 
     selected = StringVar()
     newpsn = StringVar()
+    selected_manu = StringVar()
     selected.set("Select Driver")
+    selected_manu.set("Select Manufacturer")
     sorted_drivers = list_drivers("psn")
     driverlist = [f"{x.driver}" for x in sorted_drivers]
 
     def select_psn(*args):
-        newpsn.set(f"{selected.get()}")
+        d = dr_driver(selected.get())
+        if not d:
+            pass
+        else:
+            newpsn.set(d.driver)
+
+            nameentry.delete(0, END)
+            nameentry.insert(0, d.name)
+
+            nationentry.delete(0, END)
+            nationentry.insert(0, d.nation)
+
+            numentry.delete(0, END)
+            numentry.insert(0, "#")
+            numentry.insert(1, d.number)
+
+            affilentry.delete(0, END)
+            affilentry.insert(0, d.affiliation)
+
+            selected_manu.set(d.manufacturer)
+            # manuentry.delete(0, END)
+            # manuentry.insert(0, d.manufacturer)
 
     def check_new_psn():
         if changepsn.get() == 1:
             psnentry.configure(state=NORMAL)
         elif changepsn.get() == 0:
+            # reset psnentry field before disable
+            psnentry.delete(0, END)
+            psnentry.insert(0, selected.get())
             psnentry.configure(state=DISABLED)
 
+    entrywidth = 20
+
     choosedriver = OptionMenu(edit_driver_frame, selected, *driverlist)
+    # when selected driver changes, run select psn
     selected.trace_variable('w', select_psn)
 
     Label(edit_driver_frame, text="Driver PSN:").grid(row=0, column=0, sticky=W, pady=5, padx=5)
+    choosedriver.configure(width=entrywidth)
     choosedriver.grid(row=0, column=2, padx=5, sticky=E+W)
 
     changepsn = IntVar()
@@ -723,29 +810,30 @@ def edit_driver():
 
     psnentry = Entry(edit_driver_frame, state=DISABLED, textvariable=newpsn)
     Label(edit_driver_frame, text="Edit PSN:").grid(row=1, column=0, sticky=W, pady=5, padx=5)
-    psnentry.grid(row=1, column=2, padx=5)
+    psnentry.grid(row=1, column=2, padx=5, sticky=E+W)
 
     nameentry = Entry(edit_driver_frame)
     Label(edit_driver_frame, text="Real Name:*").grid(row=2, column=0, sticky=W, pady=5, padx=5)
-    nameentry.grid(row=2, column=2, padx=5)
+    nameentry.grid(row=2, column=2, padx=5, sticky=E+W)
 
     numentry = Entry(edit_driver_frame)
     Label(edit_driver_frame, text="Driver Number:").grid(row=3, column=0, sticky=W, pady=5, padx=5)
-    numentry.grid(row=3, column=2, padx=5)
+    numentry.grid(row=3, column=2, padx=5, sticky=E+W)
 
     nationentry = Entry(edit_driver_frame)
     Label(edit_driver_frame, text="Nation:").grid(row=4, column=0, sticky=W, pady=5, padx=5)
-    nationentry.grid(row=4, column=2, padx=5)
+    nationentry.grid(row=4, column=2, padx=5, sticky=E+W)
 
     affilentry = Entry(edit_driver_frame)
-    Label(edit_driver_frame, text="Affiliation:").grid(row=5, column=0, sticky=W, pady=5, padx=5)
-    affilentry.grid(row=5, column=2, padx=5)
+    Label(edit_driver_frame, text="Affiliation:").grid(row=6, column=0, sticky=W, pady=5, padx=5)
+    affilentry.grid(row=6, column=2, padx=5, sticky=E+W)
 
-    manuentry = Entry(edit_driver_frame)
-    Label(edit_driver_frame, text="Manufacturer:").grid(row=6, column=0, sticky=W, pady=5, padx=5)
-    manuentry.grid(row=6, column=2, padx=5)
+    manuentry = OptionMenu(edit_driver_frame, selected_manu, *sorted(User.gt3_manu))
+    Label(edit_driver_frame, text="Manufacturer:").grid(row=7, column=0, sticky=W, pady=5, padx=5)
+    manuentry.grid(row=7, column=2, padx=5, sticky=E+W)
 
-    Button(edit_driver_frame, text="Save Driver", command=save_driver).grid(row=7, column=0, columnspan=3, padx=15, pady=15)
+    Button(edit_driver_frame, text="Cancel", command=cancel, padx=10).grid(row=8, column=0, padx=15, pady=15, sticky=W)
+    Button(edit_driver_frame, text="Save Driver", command=save_driver, padx=10).grid(row=8, column=2, padx=15, pady=15, sticky=E)
 
 
 
@@ -755,6 +843,7 @@ def edit_driver():
 driver_objects = []
 csvlocation_league = None
 league_info = {"name": "League Name", "series": "Series Name"}
+
 
 # creates the base level window
 root = Tk()
@@ -901,6 +990,7 @@ def quicktools_state():
 
 
 quicktools_state()
+
 
 root.resizable(False, False)
 root.config(menu=menubar)
