@@ -674,7 +674,7 @@ def edit_driver():
 
     def save_driver():
         # This is only here to remove error of not undefined var
-        driver = False
+        driver = None
 
         if newdriver:
             pass
@@ -698,7 +698,7 @@ def edit_driver():
                 driver = selected.get()
 
         if driver:
-            if  3 >= len(driver) > 16:
+            if len(driver) > 16 or len(driver) <= 3:
                 messagebox.showerror("Error", "Error:\nPSN must be between 3 and 16 characters.")
                 return
             elif " " in driver:
@@ -724,7 +724,7 @@ def edit_driver():
 
         # The idea for this is that if driver number matches driver, skip
         for x in driver_objects:
-            if n == x.number and driver.lower() == x.driver.lower():
+            if n == x.number and selected.get().lower() == x.driver.lower():
                 pass
             elif n == x.number:
                 messagebox.showerror("Error", f"Error:\nDriver Number already in use by {x.driver}.")
@@ -742,7 +742,7 @@ def edit_driver():
 
 
         print(f"{selected.get()}\n{newpsn.get()}\n{nameentry.get()}\n{n}\n"
-              f"{nationentry.get()}\n{affilentry.get()}\n{selected_manu.get()}")
+              f"{nationentry.get().upper()}\n{affilentry.get()}\n{selected_manu.get()}")
 
     # will use this to change options to allow new driver.
     # Should be simpler than two nearly identical windows
@@ -830,7 +830,7 @@ def edit_driver():
     nationentry.grid(row=4, column=2, padx=5, sticky=E+W)
 
     affilentry = Entry(edit_driver_frame)
-    Label(edit_driver_frame, text="Affiliation:").grid(row=6, column=0, sticky=W, pady=5, padx=5)
+    Label(edit_driver_frame, text="Affiliation:*").grid(row=6, column=0, sticky=W, pady=5, padx=5)
     affilentry.grid(row=6, column=2, padx=5, sticky=E+W)
 
     manuentry = OptionMenu(edit_driver_frame, selected_manu, *sorted(User.gt3_manu))
