@@ -705,13 +705,14 @@ def edit_driver(newdriver=False):
             driver = newpsn.get()
 
         elif not newdriver:
-
+            # sets d as driver object using driver search
             d = dr_driver(selected.get())
             if d is None:
                 messagebox.showerror("Error", "Error:\nNo Driver Selected")
                 return
 
             # If selected driver doesn't match newpsn check if edit requested
+            # probably should remove .lower() but don't want to break it!
             if selected.get().lower() != newpsn.get().lower():
                 # Sets driver var by checking if checkbox is checked, if true use entry, if false use selected
                 if changepsn.get() == 1:
@@ -723,7 +724,7 @@ def edit_driver(newdriver=False):
             elif changepsn.get() == 0:
                 driver = selected.get()
 
-        if driver:
+        if driver is not None:
             if len(driver) > 16:
                 messagebox.showerror("Error", "Error:\nPSN must be less than 16 characters.")
                 return
@@ -734,9 +735,16 @@ def edit_driver(newdriver=False):
                 messagebox.showerror("Error", "Error:\nDriver PSN can not have spaces.")
                 return
 
-        if newpsn.get().lower() == [x for x in driverlist]:
-            messagebox.showerror("Error", "Error:\nDriver PSN already in use.")
-            return
+        # ZERO IDEA WHY THIS DIDN'T WORK. Leaving it in so I can ponder it later
+        # if newpsn.get().lower() == [x.driver.lower() for x in driver_objects]:
+        #     messagebox.showerror("Error", "Error:\nDriver PSN already in use.")
+        #     return
+
+        # checks to see if driver psn is already in use
+        for x in driverlist:
+            if newpsn.get().lower() == x:
+                messagebox.showerror("Error", "Error:\nDriver PSN already in use.")
+                return
 
         # Checks if numentry is empty, NOT if string is 0
         if len(numentry.get()) == 0:
@@ -792,7 +800,7 @@ def edit_driver(newdriver=False):
                     # print(sd.manufacturer)
         elif newdriver:
             driver_objects.append(User(newpsn.get(), nameentry.get(), n, nationentry.get(),
-                                       affilentry.get(), manuentry.get))
+                                       affilentry.get(), manuentry.get()))
 
         # print("Input Data")
         # print(f"{selected.get()}\n{newpsn.get()}\n{nameentry.get()}\n{n}\n"
@@ -893,7 +901,7 @@ def edit_driver(newdriver=False):
     # Should be simpler than two nearly identical windows
     if newdriver:
         new()
-    else:
+    if not newdriver:
         edit()
 
 
