@@ -5,6 +5,7 @@ from fuzzywuzzy import process
 from tkinter import *
 from tkinter import filedialog
 from tkinter import messagebox
+from tkinter import ttk
 import os
 import pycountry
 from PIL import ImageTk, Image
@@ -695,7 +696,7 @@ def edit_driver(newdriver=False):
     def cancel():
         edit_driver_frame.grid_forget()
         edit_driver_frame.destroy()
-        driverinfowindow.destroy()
+        drivereditwindow.destroy()
 
     def save_driver():
         # This is only here to remove error of not undefined var
@@ -741,10 +742,11 @@ def edit_driver(newdriver=False):
         #     return
 
         # checks to see if driver psn is already in use
-        for x in driverlist:
-            if newpsn.get().lower() == x:
-                messagebox.showerror("Error", "Error:\nDriver PSN already in use.")
-                return
+        if selected.get().lower() != newpsn.get().lower():
+            for x in driverlist:
+                if newpsn.get().lower() == x:
+                    messagebox.showerror("Error", "Error:\nDriver PSN already in use.")
+                    return
 
         # Checks if numentry is empty, NOT if string is 0
         if len(numentry.get()) == 0:
@@ -798,6 +800,10 @@ def edit_driver(newdriver=False):
                 if selected_manu.get() != sd.manufacturer:
                     sd.manufacturer = selected_manu.get()
                     # print(sd.manufacturer)
+                if activecheck == 0:
+                    sd.active = False
+                elif activecheck == 1:
+                    sd.active = True
         elif newdriver:
             driver_objects.append(User(newpsn.get(), nameentry.get(), n, nationentry.get(),
                                        affilentry.get(), manuentry.get()))
@@ -810,10 +816,11 @@ def edit_driver(newdriver=False):
         # print(f"{sd.driver}\n{sd.name}\n{n}\n"
         #       f"{sd.nation}\n{sd.affiliation}\n{sd.manufacturer}")
 
-    driverinfowindow = Toplevel()
-    driverinfowindow.attributes('-topmost', 'true')
+    drivereditwindow = Toplevel()
+    # drivereditwindow.attributes('-topmost', 'true')
+    drivereditwindow.resizable(False, False)
 
-    edit_driver_frame = LabelFrame(driverinfowindow, text="Edit Driver")
+    edit_driver_frame = LabelFrame(drivereditwindow, text="Edit Driver")
     edit_driver_frame.pack(padx=10, pady=10)
 
     selected = StringVar()
@@ -905,13 +912,88 @@ def edit_driver(newdriver=False):
         edit()
 
 
+def results_viewer():
+    def write_results():
+
+        resultstree = ttk.Treeview(resultswindow, height=28)
+        resultstree['show'] = 'headings'
+        resultstree["columns"] = ("pos", "psn", "name", "number", "nation", "affil", "manu", "manuregion",
+                                  "points", "active")
+        resultstree.grid(row=1, column=0)
+        resultstree.heading("#0", text="", anchor="w")
+        resultstree.column("#0")
+
+        resultstree.heading("pos", text="POS", anchor="e")
+        resultstree.column("pos", anchor="e", width=40)
+
+        resultstree.heading("psn", text="PSN", anchor="w")
+        resultstree.column("psn", anchor="w", width=125)
+
+        resultstree.heading("name", text="Name*", anchor="w")
+        resultstree.column("name", anchor="w", width=100)
+
+        resultstree.heading("number", text="#", anchor="w")
+        resultstree.column("number", anchor="w", width=50)
+
+        resultstree.heading("nation", text="Nation", anchor="w")
+        resultstree.column("nation", anchor="w", width=50)
+
+        resultstree.heading("affil", text="Affiliation*", anchor="w")
+        resultstree.column("affil", anchor="w", width=175)
+
+        resultstree.heading("manu", text="Manufacturer", anchor="w")
+        resultstree.column("manu", anchor="w", width=100)
+
+        resultstree.heading("manuregion", text="Region", anchor="w")
+        resultstree.column("manuregion", anchor="w", width=70)
+
+        resultstree.heading("points", text="Points", anchor="w")
+        resultstree.column("points", anchor="w", width=50)
+
+        resultstree.heading("active", text="Active", anchor="w")
+        resultstree.column("active", anchor="w", width=50)
+
+        i = 1
+        for d in list_drivers(sort="points"):
+            n = f"#{d.number}"
+            if (i % 2) == 0:
+                rowtag = "evenrow"
+            else:
+                rowtag = "oddrow"
+
+            resultstree.insert('', 'end', str(i), values=(i, d.driver, d.name, n, d.nation, d.affiliation,
+                                                          d.manufacturer, d.manuregion(), d.total_points, d.active),
+                               tags=rowtag)
+            # resultstree.item(str(i), tags=[str(rowtag)])
+            i += 1
+
+        # Bug is ttk makes this not work I think?
+        resultstree.tag_configure("evenrow", background="#DFDFDF")
+
+    resultswindow = Toplevel()
+    resultswindow.title("Overall Results")
+    resultsinfo = Frame(resultswindow, padx=10, pady=5)
+
+    # scrollbar = Scrollbar(???)
+
+    resultsinfo.grid(row=0, column=0, sticky=NSEW)
+    Label(resultsinfo, textvariable=league_name, font=("", 18)).grid(row=0, column=0, padx=5, pady=5, sticky=W)
+    Label(resultsinfo, textvariable=series_name, font=("", 14)).grid(row=1, column=0, padx=5, pady=5, sticky=W)
+
+    write_results()
+
+
+def import_screenshot():
+    # import_screenshot = Toplevel()
+    pass
+
 driver_objects = []
 csvlocation_league = None
 league_info = {"name": "League Name", "series": "Series Name"}
 
 # creates the base level window
 root = Tk()
-root.title("GTS League Management Tool - Ver Alpha 0.1")
+root.title("League Manager - Alpha 0.1")
 
 
 # root.geometry('400x500')
@@ -954,6 +1036,9 @@ datamenu.add_command(label="New Driver", command=new_driver)
 datamenu.add_separator()
 datamenu.add_command(label="Edit Round", command=donothing)
 datamenu.add_command(label="Edit Driver", command=edit_driver)
+datamenu.add_separator()
+datamenu.add_command(label="View Results", command=results_viewer)
+
 menubar.add_cascade(label="Data", menu=datamenu)
 
 exportmenu = Menu(menubar, tearoff=0)
@@ -982,12 +1067,12 @@ topdriversframe.grid(row=2, column=0, padx=10, pady=10, sticky=NW)
 notopdrivers = Label(topdriversframe, text="No Driver Entries")
 
 
-def top_drivers_main(list):
+def top_drivers_main(dl):
     # Writes top drivers
     # Top Drivers Headings.
 
     global notopdrivers
-    if list:
+    if dl:
         notopdrivers.destroy()
         Label(topdriversframe, text="Pos", padx=2, pady=2, bg="gray90").grid(row=0, column=0, padx=(5, 0), sticky=E + W)
         Label(topdriversframe, text="Driver", padx=2, pady=2, bg="gray90").grid(row=0, column=1, sticky=E + W)
@@ -996,8 +1081,8 @@ def top_drivers_main(list):
 
         # Top Drivers List
         for i in range(15):  # Rows
-            top_pos_driver = list[i].driver
-            top_pos_points = list[i].total_points
+            top_pos_driver = dl[i].driver
+            top_pos_points = dl[i].total_points
             i = i + 1
 
             top_pos = Label(topdriversframe, text=i, padx=2, pady=2)
@@ -1027,7 +1112,7 @@ quicktoolsframe = LabelFrame(root, text="Quick Tools")
 quicktoolsframe.grid(row=2, column=1, padx=10, pady=10, sticky=NE)
 qtpadx = 10
 qtpady = 10
-b1 = Button(quicktoolsframe, text="Driver List", command=donothing, width=20)
+b1 = Button(quicktoolsframe, text="Results", command=results_viewer, width=20)
 b1.pack(padx=qtpadx, pady=qtpady)
 b2 = Button(quicktoolsframe, text="Import Round Results", command=donothing, width=20)
 b2.pack(padx=qtpadx, pady=qtpady)
@@ -1058,6 +1143,8 @@ def menu_state():
         datamenu.entryconfigure(1, state=NORMAL)
         datamenu.entryconfigure(3, state=NORMAL)
         datamenu.entryconfigure(4, state=NORMAL)
+        datamenu.entryconfigure(6, state=NORMAL)
+
 
         exportmenu.entryconfigure(0, state=NORMAL)
         exportmenu.entryconfigure(1, state=NORMAL)
@@ -1082,6 +1169,8 @@ def menu_state():
         datamenu.entryconfigure(1, state=DISABLED)
         datamenu.entryconfigure(3, state=DISABLED)
         datamenu.entryconfigure(4, state=DISABLED)
+        datamenu.entryconfigure(6, state=DISABLED)
+
 
         exportmenu.entryconfigure(0, state=DISABLED)
         exportmenu.entryconfigure(1, state=DISABLED)
