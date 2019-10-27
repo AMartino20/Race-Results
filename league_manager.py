@@ -437,6 +437,31 @@ def process_race_results(ss):
     return data
 
 
+def process_results(ss):
+    data = {}
+    row_y1 = 236
+    row_y2 = 267
+    # t is the threshold for the binary conversion of image processing
+    t = 135
+    # uses 14 because that is all that can show on race results screen
+    for r in range(1, 13):
+        # for this function, ROI is only driver name
+        d = image_processing(ss, row_y1, row_y2, 670, 900, t)
+        d = ocr_text(d)
+        # creates dictionary entry with row number as postion
+        # there's no need to OCR position because it is a known factor
+        data[r] = d
+        # moves row variables to next line
+        row_y1 = row_y1 + 53
+        row_y2 = row_y2 + 53
+
+    # Use to see if theres a problem from this function
+    # for r in data.values():
+    #     print(r)
+    # # cv2.imshow('Race Results', binary)
+    return data
+
+
 # Data Tools
 
 # cli
@@ -698,6 +723,7 @@ def edit_driver(newdriver=False):
         edit_driver_frame.destroy()
         drivereditwindow.destroy()
 
+    # Need to work on manuentry.get() for saving, might not work?
     def save_driver():
         # This is only here to remove error of not undefined var
         driver = None
@@ -983,9 +1009,167 @@ def results_viewer():
     write_results()
 
 
-def import_screenshot():
-    # import_screenshot = Toplevel()
-    pass
+def round_results(type=""):
+    def choose_ss():
+        global sslocation
+        sslocation = None
+        sslocation = filedialog.askopenfilename(initialdir="", title="Select Driver List CSV",
+                                                filetypes=[("Jpeg", ["*.jpeg", "*.jpg"]), ("PNG", "*.png")])
+
+    def process_ss():
+        global sslocation
+        img = cv2.imread(sslocation)
+
+        # Creates dictionary of OCR results
+        ocr_results = process_results(img)
+
+        print(ocr_results)
+
+    def create_rows():
+        rowdict = {"p1": ["p1_ocr", "p1_psn", "p1_sub"],
+                   "p2": ["p2_ocr", "p2_psn", "p2_sub"],
+                   "p3": ["p3_ocr", "p3_psn", "p3_sub"],
+                   "p4": ["p4_ocr", "p4_psn", "p4_sub"],
+                   "p5": ["p5_ocr", "p5_psn", "p5_sub"],
+                   "p6": ["p6_ocr", "p6_psn", "p6_sub"],
+                   "p7": ["p7_ocr", "p7_psn", "p7_sub"],
+                   "p8": ["p8_ocr", "p8_psn", "p8_sub"],
+                   "p9": ["p9_ocr", "p9_psn", "p9_sub"],
+                   "p10": ["p10_ocr", "p10_psn", "p10_sub"],
+                   "p11": ["p11_ocr", "p11_psn", "p11_sub"],
+                   "p12": ["p12_ocr", "p12_psn", "p12_sub"],
+                   "p13": ["p13_ocr", "p13_psn", "p13_sub"],
+                   "p14": ["p14_ocr", "p14_psn", "p14_sub"],
+                   "p15": ["p15_ocr", "p15_psn", "p15_sub"],
+                   "p16": ["p16_ocr", "p16_psn", "p16_sub"],
+                   }
+
+        results_frame = LabelFrame(import_ss_win, text="Results")
+        results_frame.grid(row=2, column=0, padx=5, pady=5, sticky=NSEW)
+
+        Label(results_frame, text="POS", width=3).grid(row=0, column=0)
+        if type == "ss":
+            Label(results_frame, text="OCR", width=20).grid(row=0, column=1)
+        Label(results_frame, text="Driver PSN", width=20).grid(row=0, column=2)
+        Label(results_frame, text="Subbed").grid(row=0, column=3)
+        Label(results_frame, text="Pole").grid(row=0, column=4)
+        Label(results_frame, text="Points", width=5).grid(row=0, column=5, padx=(0, 10))
+
+        Label(results_frame, text="POS", width=3).grid(row=0, column=6)
+        if type == "ss":
+            Label(results_frame, text="OCR", width=20).grid(row=0, column=7)
+        Label(results_frame, text="Driver PSN", width=20).grid(row=0, column=8)
+        Label(results_frame, text="Subbed").grid(row=0, column=9)
+        Label(results_frame, text="Pole").grid(row=0, column=10)
+        Label(results_frame, text="Points", width=5).grid(row=0, column=11)
+
+        p = 1
+        r = 1
+        c = 0
+
+        for k, v in rowdict.items():
+            if r == 9:
+                c = 6
+                r = 1
+
+            # tkrow[k] = LabelFrame(results_frame)
+            # tkrow[k].grid(row=r, column=c, padx=(0, 20), sticky=NSEW,)
+
+            padding = (0, 5)
+            Label(results_frame, text=p, width=3).grid(row=r, column=c, sticky=E)
+
+            if type == "ss":
+                tkrow[v[0]] = Label(results_frame, text="None", width=20)
+                tkrow[v[0]].grid(row=r, column=c+1)
+
+            tkrow[v[1]] = StringVar()
+            tkrow[v[1]].set("Select Driver")
+            OptionMenu(results_frame, tkrow[v[1]], *driverlist).grid(row=r, column=c+2, pady=padding, sticky=EW)
+
+            tkrow[v[2]] = IntVar()
+            Checkbutton(results_frame, variable=tkrow[v[2]]).grid(row=r, column=c+3, sticky=E)
+
+            # ttk.Separator(results_frame, orient=HORIZONTAL).grid(row=r, column=c, columnspan=6, sticky=S)
+
+            p += 1
+            r += 1
+
+        # adds radiobuttons to proper space, uses same setup as building rows
+        r = 1
+        c = 0
+        pole.set(1)
+        for x, opt in pole_choices:
+            if r == 9:
+                c = 6
+                r = 1
+            Radiobutton(results_frame, variable=pole, value=opt).grid(row=r, column=c+4)
+            r += 1
+
+    driverlist = [x.driver for x in driver_objects]
+    headertext = StringVar()
+    tkrow = {}
+    pole = IntVar()
+    pole_choices = [("P1", 1),
+                    ("P2", 2),
+                    ("P3", 3),
+                    ("P4", 4),
+                    ("P5", 5),
+                    ("P6", 6),
+                    ("P7", 7),
+                    ("P8", 8),
+                    ("P9", 9),
+                    ("P10", 10),
+                    ("P11", 11),
+                    ("P12", 12),
+                    ("P13", 13),
+                    ("P14", 14),
+                    ("P15", 15),
+                    ("P16", 16),
+                    ]
+
+    import_ss_win = Toplevel()
+    # import_ss_win.resizable(False, False)
+
+    if type == "ss":
+        headertext.set("Import Round Screenshot")
+    elif type == "manual":
+        headertext.set("Manual Round Entry")
+    elif type == "csv":
+        headertext.set("Import Round CSV")
+
+    windowframe = LabelFrame(import_ss_win)
+    windowframe.grid(row=0, column=0, columnspan=10, pady=5, padx=5, sticky=NSEW)
+    Label(windowframe, textvariable=headertext, font=("", 14)).grid(row=1, column=0, padx=5, pady=5, sticky=W)
+
+    select_frame = LabelFrame(import_ss_win)
+    select_frame.grid(row=1, column=0, columnspan=10, pady=5, padx=5, sticky=NSEW)
+
+    if type == "ss":
+        Label(select_frame, text="Select Screenshot").grid(row=0, column=0, pady=5, padx=5, sticky=W)
+        Button(select_frame, text="Choose Screenshot", command=choose_ss, ).grid(row=0, column=1, pady=5, padx=5,
+                                                                                 sticky=W)
+        Button(select_frame, text="Process Screenshot", command=process_ss).grid(row=0, column=2, padx=5, pady=5,
+                                                                                 sticky=E)
+
+    elif type == "csv":
+        Label(select_frame, text="Select CSV").grid(row=0, column=0, pady=5, padx=5, sticky=W)
+        Button(select_frame, text="Choose CSV", command=choose_ss, ).grid(row=0, column=1, pady=5, padx=5,
+                                                                                 sticky=W)
+        Button(select_frame, text="Process CSV", command=process_ss).grid(row=0, column=2, padx=5, pady=5,
+                                                                                 sticky=E)
+    create_rows()
+
+
+def round_ss():
+    round_results(type="ss")
+
+
+def round_csv():
+    round_results(type="csv")
+
+
+def round_manual():
+    round_results(type="manual")
 
 driver_objects = []
 csvlocation_league = None
@@ -1026,9 +1210,10 @@ menubar.add_cascade(label="File", menu=filemenu)
 importmenu = Menu(menubar, tearoff=0)
 importmenu.add_command(label="Import Round Settings", command=donothing)
 importmenu.add_separator()
-importmenu.add_command(label="Import Single Round", command=donothing)
-importmenu.add_command(label="Import Screenshot", command=donothing)
-menubar.add_cascade(label="Import", menu=importmenu)
+importmenu.add_command(label="Manual Round Results", command=round_manual)
+importmenu.add_command(label="Import Results CSV", command=round_csv)
+importmenu.add_command(label="Import Results Screenshot", command=round_ss)
+menubar.add_cascade(label="Results", menu=importmenu)
 
 datamenu = Menu(menubar, tearoff=0)
 datamenu.add_command(label="New Round", command=donothing)
@@ -1114,7 +1299,7 @@ qtpadx = 10
 qtpady = 10
 b1 = Button(quicktoolsframe, text="Results", command=results_viewer, width=20)
 b1.pack(padx=qtpadx, pady=qtpady)
-b2 = Button(quicktoolsframe, text="Import Round Results", command=donothing, width=20)
+b2 = Button(quicktoolsframe, text="Enter Round Results", command=round_manual, width=20)
 b2.pack(padx=qtpadx, pady=qtpady)
 b3 = Button(quicktoolsframe, text="Export Round Results", command=donothing, width=20)
 b3.pack(padx=qtpadx, pady=qtpady)

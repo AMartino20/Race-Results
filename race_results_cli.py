@@ -136,7 +136,7 @@ def import_csv(filename):
         for row in readCSV:
             users.append(User(**row))
 
-return users
+    return users
 
 
 def import_round(filename):
