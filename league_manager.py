@@ -400,6 +400,8 @@ def image_processing(full_image, y1, y2, x1, x2, t):
     # pixel = int(ocr_image[4, 4])
     _, ocr_binary = cv2.threshold(ocr_image, t, 255, cv2.THRESH_BINARY_INV)
 
+    # cv2.imshow("", ocr_image)
+
     return ocr_binary
 
 
@@ -1023,27 +1025,41 @@ def round_results(type=""):
         # Creates dictionary of OCR results
         ocr_results = process_results(img)
 
-        print(ocr_results)
+        clean_data = {k: v for k, v in ocr_results.items() if len(v) >= 3}
+
+        for p in clean_data:
+            # Takes best match and defines as x
+            x = list(process.extractOne(clean_data[p], driverlist))
+            # print(x)
+            # matches best match with looped dict
+            d = clean_data[p]
+            # if match percent is greater than 60% input match, otherwise give None driver name
+            if x[1] > 60:
+                # clean_data[p] = [dr_driver(x[0]).driver, x[1], d]
+                clean_data[p] = [d, dr_driver(x[0]).driver]
+            else:
+                # clean_data[p] = ['**Unknown**', x[1], d]
+                clean_data[p] = None
+
+            # add .driver at end to get string of name, otherwise it's the object
+            # and we need the object for the next steps
+            # cleaned_dl[p] = dr_driver(x[0])
+
+        ocr_data = {f"p{k}_ocr": v[0] for k, v in clean_data.items()}
+        clean_data = {f"p{k}_psn": v[1] for k, v in clean_data.items()}
+
+        print(ocr_data)
+        print(clean_data)
+
+        for k, v in ocr_data.items():
+            tkrow[k].set(v)
+
+        for k, v in clean_data.items():
+            tkrow[k].set(v)
+
+
 
     def create_rows():
-        rowdict = {"p1": ["p1_ocr", "p1_psn", "p1_sub"],
-                   "p2": ["p2_ocr", "p2_psn", "p2_sub"],
-                   "p3": ["p3_ocr", "p3_psn", "p3_sub"],
-                   "p4": ["p4_ocr", "p4_psn", "p4_sub"],
-                   "p5": ["p5_ocr", "p5_psn", "p5_sub"],
-                   "p6": ["p6_ocr", "p6_psn", "p6_sub"],
-                   "p7": ["p7_ocr", "p7_psn", "p7_sub"],
-                   "p8": ["p8_ocr", "p8_psn", "p8_sub"],
-                   "p9": ["p9_ocr", "p9_psn", "p9_sub"],
-                   "p10": ["p10_ocr", "p10_psn", "p10_sub"],
-                   "p11": ["p11_ocr", "p11_psn", "p11_sub"],
-                   "p12": ["p12_ocr", "p12_psn", "p12_sub"],
-                   "p13": ["p13_ocr", "p13_psn", "p13_sub"],
-                   "p14": ["p14_ocr", "p14_psn", "p14_sub"],
-                   "p15": ["p15_ocr", "p15_psn", "p15_sub"],
-                   "p16": ["p16_ocr", "p16_psn", "p16_sub"],
-                   }
-
         results_frame = LabelFrame(import_ss_win, text="Results")
         results_frame.grid(row=2, column=0, padx=5, pady=5, sticky=NSEW)
 
@@ -1063,7 +1079,9 @@ def round_results(type=""):
         Label(results_frame, text="Pole").grid(row=0, column=10)
         Label(results_frame, text="Points", width=5).grid(row=0, column=11)
 
+        # Position
         p = 1
+        # Row resets and column changes to 6 when row hits 9
         r = 1
         c = 0
 
@@ -1079,8 +1097,9 @@ def round_results(type=""):
             Label(results_frame, text=p, width=3).grid(row=r, column=c, sticky=E)
 
             if type == "ss":
-                tkrow[v[0]] = Label(results_frame, text="None", width=20)
-                tkrow[v[0]].grid(row=r, column=c+1)
+                tkrow[v[0]] = StringVar()
+                tkrow[v[0]].set("None")
+                Label(results_frame, textvariable=tkrow[v[0]], width=20).grid(row=r, column=c+1)
 
             tkrow[v[1]] = StringVar()
             tkrow[v[1]].set("Select Driver")
@@ -1105,6 +1124,7 @@ def round_results(type=""):
             Radiobutton(results_frame, variable=pole, value=opt).grid(row=r, column=c+4)
             r += 1
 
+
     driverlist = [x.driver for x in driver_objects]
     headertext = StringVar()
     tkrow = {}
@@ -1126,6 +1146,23 @@ def round_results(type=""):
                     ("P15", 15),
                     ("P16", 16),
                     ]
+    rowdict = {"p1": ["p1_ocr", "p1_psn", "p1_sub"],
+               "p2": ["p2_ocr", "p2_psn", "p2_sub"],
+               "p3": ["p3_ocr", "p3_psn", "p3_sub"],
+               "p4": ["p4_ocr", "p4_psn", "p4_sub"],
+               "p5": ["p5_ocr", "p5_psn", "p5_sub"],
+               "p6": ["p6_ocr", "p6_psn", "p6_sub"],
+               "p7": ["p7_ocr", "p7_psn", "p7_sub"],
+               "p8": ["p8_ocr", "p8_psn", "p8_sub"],
+               "p9": ["p9_ocr", "p9_psn", "p9_sub"],
+               "p10": ["p10_ocr", "p10_psn", "p10_sub"],
+               "p11": ["p11_ocr", "p11_psn", "p11_sub"],
+               "p12": ["p12_ocr", "p12_psn", "p12_sub"],
+               "p13": ["p13_ocr", "p13_psn", "p13_sub"],
+               "p14": ["p14_ocr", "p14_psn", "p14_sub"],
+               "p15": ["p15_ocr", "p15_psn", "p15_sub"],
+               "p16": ["p16_ocr", "p16_psn", "p16_sub"],
+               }
 
     import_ss_win = Toplevel()
     # import_ss_win.resizable(False, False)
@@ -1323,6 +1360,8 @@ def menu_state():
         importmenu.entryconfigure(0, state=NORMAL)
         importmenu.entryconfigure(2, state=NORMAL)
         importmenu.entryconfigure(3, state=NORMAL)
+        importmenu.entryconfigure(4, state=NORMAL)
+
 
         datamenu.entryconfigure(0, state=NORMAL)
         datamenu.entryconfigure(1, state=NORMAL)
@@ -1349,6 +1388,8 @@ def menu_state():
         importmenu.entryconfigure(0, state=DISABLED)
         importmenu.entryconfigure(2, state=DISABLED)
         importmenu.entryconfigure(3, state=DISABLED)
+        importmenu.entryconfigure(4, state=DISABLED)
+
 
         datamenu.entryconfigure(0, state=DISABLED)
         datamenu.entryconfigure(1, state=DISABLED)
